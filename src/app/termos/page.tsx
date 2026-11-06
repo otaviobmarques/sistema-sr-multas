@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Documento } from "@/components/Documento";
+import { EMPRESA } from "@/lib/empresa";
 
 export const metadata = { title: "Termos de uso · Senhor Multas" };
 
@@ -7,7 +8,7 @@ export default function Termos() {
   return (
     <Documento titulo="Termos de uso" versao="Versão 0.1 (minuta) · 06/11/2026">
       <p>
-        Estes Termos regulam o uso da plataforma <strong>Senhor Multas</strong>, operada por <strong>[RAZÃO SOCIAL]</strong>, CNPJ <strong>[00.000.000/0000-00]</strong>, com sede em <strong>[ENDEREÇO]</strong> (“Senhor Multas”, “nós”). Ao criar uma conta, você declara ter lido e aceitado estes Termos e a <Link href="/privacidade" className="text-brand underline">Política de privacidade</Link>.
+        Estes Termos regulam o uso da plataforma <strong>Senhor Multas</strong>, operada por <strong>{EMPRESA.razaoSocial}</strong>, CNPJ <strong>{EMPRESA.cnpj}</strong>, com sede na <strong>{EMPRESA.endereco}</strong> (“Senhor Multas”, “nós”). Ao criar uma conta, você declara ter lido e aceitado estes Termos e a <Link href="/privacidade" className="text-brand underline">Política de privacidade</Link>.
       </p>
 
       <h2>1. O que o Senhor Multas faz</h2>
@@ -50,7 +51,7 @@ export default function Termos() {
       <p>[A DEFINIR PELO JURÍDICO.] Não respondemos pelo resultado do julgamento, por defesas não protocoladas no prazo ou por informações incorretas fornecidas pelo usuário, nos limites permitidos pelo Código de Defesa do Consumidor.</p>
 
       <h2>9. Alterações e foro</h2>
-      <p>Podemos atualizar estes Termos, avisando com antecedência pelos canais cadastrados. Fica eleito o foro do domicílio do consumidor. Dúvidas: <strong>[e-mail de atendimento]</strong>.</p>
+      <p>Podemos atualizar estes Termos, avisando com antecedência pelos canais cadastrados. Fica eleito o foro do domicílio do consumidor. Dúvidas: <strong>{EMPRESA.emailAtendimento}</strong>.</p>
     </Documento>
   );
 }

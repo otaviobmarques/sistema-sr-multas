@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Documento } from "@/components/Documento";
+import { EMPRESA } from "@/lib/empresa";
 
 export const metadata = { title: "Política de privacidade · Senhor Multas" };
 
 export default function Privacidade() {
   return (
     <Documento titulo="Política de privacidade" versao="Versão 0.1 (minuta) · 06/11/2026 · Lei Geral de Proteção de Dados (Lei 13.709/2018)">
-      <p>Esta política explica quais dados pessoais o <strong>Senhor Multas</strong> ([RAZÃO SOCIAL], CNPJ [00.000.000/0000-00]) trata, para quê, com quem compartilha e como você exerce seus direitos.</p>
+      <p>Esta política explica quais dados pessoais o <strong>Senhor Multas</strong> ({EMPRESA.razaoSocial}, CNPJ {EMPRESA.cnpj}, {EMPRESA.endereco}) trata, para quê, com quem compartilha e como você exerce seus direitos.</p>
 
       <h2>1. Dados que tratamos</h2>
       <ul>
@@ -47,7 +48,7 @@ export default function Privacidade() {
       <p>Você pode, a qualquer momento: confirmar o tratamento e acessar seus dados; corrigir dados incompletos ou errados; pedir a exclusão (ressalvados os dados que a lei exige manter); pedir a portabilidade; revogar consentimentos; e reclamar à ANPD. A maior parte disso está disponível em <Link href="/app/conta" className="text-brand underline">Minha conta</Link> (baixar meus dados, pedir correção ou exclusão). Respondemos em até 15 dias.</p>
 
       <h2>7. Encarregado (DPO) e contato</h2>
-      <p>Encarregado pelo tratamento de dados: <strong>[NOME]</strong> — <strong>[e-mail do encarregado]</strong>.</p>
+      <p>Encarregado pelo tratamento de dados: <strong>{EMPRESA.dpo.nome}</strong> — <strong>{EMPRESA.dpo.email}</strong>.</p>
     </Documento>
   );
 }
