@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, save, uid } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { naoAutorizado, usuarioAtual } from "@/lib/session";
 import { responder } from "@/lib/ai/assistant";
 import { extrair } from "@/lib/ai/extractor";
 import { multaDeExtracao, registrarMulta } from "@/lib/servico";
@@ -12,12 +12,14 @@ export const maxDuration = 60;
 const FASES: Record<string, string> = { defesa_previa: "Defesa Prévia", jari: "JARI", cetran: "CETRAN", indicacao_condutor: "Indicação de condutor" };
 
 export async function GET() {
-  const u = await usuarioAtual();
+  const u = await usuarioAtual(true);
+  if (!u) return naoAutorizado();
   return NextResponse.json({ mensagens: db().chat.filter((m) => m.usuario_id === u.id) });
 }
 
 export async function POST(req: Request) {
-  const u = await usuarioAtual();
+  const u = await usuarioAtual(true);
+  if (!u) return naoAutorizado();
   const d = db();
   const form = await req.formData();
   const texto = String(form.get("texto") ?? "").slice(0, 2000);
@@ -35,11 +37,11 @@ export async function POST(req: Request) {
       const { dados } = await extrair({ base64: Buffer.from(await file.arrayBuffer()).toString("base64"), mime: file.type, nome: file.name });
       if (!dados.qualidade_foto.ok) {
         add({ papel: "assistant", texto: `Não consegui ler bem essa foto 📷 (${dados.qualidade_foto.problema.replace("_", " ")}). ${dados.qualidade_foto.orientacao}` });
-        save();
+        await save();
         return NextResponse.json({ mensagens: d.chat.filter((m) => m.usuario_id === u.id) });
       }
       const multa = multaDeExtracao(dados, u.id, file.name, "whatsapp");
-      const defesa = registrarMulta(multa);
+      const defesa = await registrarMulta(multa);
       const pontos = defesa.checklist.filter((c) => c.resultado === "possivel_nulidade" || c.resultado === "nao_informado").length;
       const dias = Math.ceil((new Date(multa.prazo).getTime() - Date.now()) / 86_400_000);
       const est = defesa.estimativa.faixa === "indisponivel" ? "ainda sem amostra suficiente" : defesa.estimativa.faixa;
@@ -63,11 +65,11 @@ export async function POST(req: Request) {
       const r = await responder(u.id, hist);
       add({ papel: "assistant", texto: r, acoes: /checkout|plano/i.test(r) ? [{ rotulo: "Ver planos", href: "/app/planos" }] : undefined });
     }
-    save();
+    await save();
     return NextResponse.json({ mensagens: d.chat.filter((m) => m.usuario_id === u.id) });
   } catch (e) {
     add({ papel: "assistant", texto: `Não consegui concluir agora (${(e as Error).message}). Tente novamente em instantes.` });
-    save();
+    await save();
     return NextResponse.json({ mensagens: d.chat.filter((m) => m.usuario_id === u.id) });
   }
 }

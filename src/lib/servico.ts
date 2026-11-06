@@ -96,13 +96,13 @@ export function analisar(m: Multa, defesa?: Defesa): Defesa {
   return base;
 }
 
-export function registrarMulta(m: Multa): Defesa {
+export async function registrarMulta(m: Multa): Promise<Defesa> {
   const d = db();
   const defesa = analisar(m);
   d.multas.unshift(m);
   d.defesas.unshift(defesa);
   audit(m.dono_id, "multa_enviada", `multa:${m.id}`, `${m.placa} · ${m.orgao}`);
-  save();
+  await save();
   return defesa;
 }
 
@@ -117,7 +117,7 @@ export async function gerar(defesaId: string, usuarioId: string, ajuste?: string
   if (!defesa.credito_consumido) {
     if (saldo(usuarioId) < 1) {
       defesa.status = "aguardando_pagamento";
-      save();
+      await save();
       return { precisaPagar: true as const, defesa };
     }
     d.carteira.unshift({ id: uid("cart"), usuario_id: usuarioId, defesa_id: defesa.id, quantidade: -1, descricao: `Defesa ${multa.orgao} · ${multa.placa}`, data: new Date().toISOString() });
@@ -137,6 +137,6 @@ export async function gerar(defesaId: string, usuarioId: string, ajuste?: string
   const caso = `#${defesa.id.slice(-4)}`;
   for (const e of r.eventos) d.trava.unshift({ id: uid("tr"), defesa_id: defesa.id, caso, acao: e.acao, motivo: e.motivo, data: new Date().toISOString() });
   audit(usuarioId, ajuste ? "ajuste_ia" : "defesa_gerada", `defesa:${defesa.id}`, `v${r.versao.versao} · ${r.modo}`);
-  save();
+  await save();
   return { precisaPagar: false as const, defesa };
 }

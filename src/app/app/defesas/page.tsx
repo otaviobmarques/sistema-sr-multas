@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { db } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { exigirUsuario } from "@/lib/session";
 import { gravidade } from "@/lib/valores";
 import { Card, PageHeader, Stat, StatusBadge, brl, dataBR, FASES } from "@/components/ui";
 import type { Defesa, Multa } from "@/lib/types";
@@ -22,7 +22,7 @@ function proximaEtapa(df: Defesa, m: Multa) {
 }
 
 export default async function MinhasDefesas() {
-  const u = await usuarioAtual();
+  const u = await exigirUsuario();
   const d = db();
   const rows = d.defesas.filter((x) => x.dono_id === u.id).map((df) => ({ df, m: d.multas.find((m) => m.id === df.multa_id)! }));
   const deferidas = rows.filter((r) => r.df.status === "deferida");

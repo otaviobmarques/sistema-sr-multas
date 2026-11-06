@@ -6,7 +6,7 @@ type EventoPayload = { id?: string; event: string; payment?: { id: string; exter
  * Processa um evento de webhook do Asaas com IDEMPOTÊNCIA:
  * o mesmo evento (id) nunca libera créditos duas vezes.
  */
-export function processarEventoAsaas(ev: EventoPayload): { ok: true; duplicado?: boolean; acao?: string } {
+export async function processarEventoAsaas(ev: EventoPayload): Promise<{ ok: true; duplicado?: boolean; acao?: string }> {
   const d = db();
   const eventoId = ev.id ?? `${ev.event}:${ev.payment?.id}`;
   if (d.eventos_asaas.some((e) => e.id === eventoId)) return { ok: true, duplicado: true };
@@ -52,6 +52,6 @@ export function processarEventoAsaas(ev: EventoPayload): { ok: true; duplicado?:
     }
   }
   d.eventos_asaas[0].processado = true;
-  save();
+  await save();
   return { ok: true, acao };
 }

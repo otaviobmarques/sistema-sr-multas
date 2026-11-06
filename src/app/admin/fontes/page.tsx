@@ -1,7 +1,9 @@
+import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Badge, Card, PageHeader } from "@/components/ui";
 
-export default function Fontes() {
+export default async function Fontes() {
+  await exigirAdmin();
   const d = db();
   return (
     <div>

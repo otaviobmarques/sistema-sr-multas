@@ -154,25 +154,129 @@ function seed(): DB {
   };
 }
 
-export function db(): DB {
-  if (g.__smdb) return g.__smdb;
+// ------------------------------------------------------------------ Armazenamento
+// Com NEXT_PUBLIC_SUPABASE_URL + SM_SERVER_SECRET: Supabase (tabela sm_registros, via funções protegidas).
+// Sem elas: arquivo local .data/db.json (desenvolvimento).
+export const supabaseAtivo = () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SM_SERVER_SECRET);
+const LISTAS_SEM_ID = ["jurimetria", "resultados_orgao"] as const;
+type Linha = { colecao: string; id: string; dono_id?: string | null; data: unknown };
+const gs = globalThis as unknown as { __smsnap?: Map<string, string>; __smload?: Promise<void> | null; __smloadedAt?: number };
+
+async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_segredo: process.env.SM_SERVER_SECRET, ...args }),
+    cache: "no-store",
+  });
+  const txt = await res.text();
+  if (!res.ok) throw new Error(`Supabase ${fn}: ${res.status} ${txt.slice(0, 200)}`);
+  return (txt ? JSON.parse(txt) : null) as T;
+}
+export const rpcServidor = rpc;
+
+function paraLinhas(d: DB): Linha[] {
+  const out: Linha[] = [];
+  for (const [colecao, itens] of Object.entries(d) as [string, { id?: string; dono_id?: string; usuario_id?: string }[]][]) {
+    if ((LISTAS_SEM_ID as readonly string[]).includes(colecao)) out.push({ colecao, id: "__lista", data: itens });
+    else for (const it of itens) out.push({ colecao, id: it.id!, dono_id: it.dono_id ?? it.usuario_id ?? null, data: it });
+  }
+  return out;
+}
+
+function deLinhas(linhas: Linha[]): DB {
+  const d = { usuarios: [], veiculos: [], multas: [], defesas: [], fontes: [], planos: [], pedidos: [], carteira: [], parceiros: [], eventos_asaas: [], auditoria: [], trava: [], chat: [], jurimetria: [], resultados_orgao: [] } as unknown as Record<string, unknown[]>;
+  for (const l of linhas) {
+    if ((LISTAS_SEM_ID as readonly string[]).includes(l.colecao)) d[l.colecao] = l.data as unknown[];
+    else (d[l.colecao] ??= []).push(l.data);
+  }
+  // ordem: mais recentes primeiro (como no armazenamento local)
+  for (const k of Object.keys(d)) if (!(LISTAS_SEM_ID as readonly string[]).includes(k as never))
+    (d[k] as { criado_em?: string; data?: string; recebido_em?: string }[]).sort((a, b) => String(b.criado_em ?? b.data ?? b.recebido_em ?? "").localeCompare(String(a.criado_em ?? a.data ?? a.recebido_em ?? "")));
+  (d.chat as { data: string }[]).reverse(); // chat em ordem cronológica
+  (d.planos as { preco: number | null }[]).sort((a, b) => (a.preco ?? 1e9) - (b.preco ?? 1e9));
+  return d as unknown as DB;
+}
+
+const chave = (l: Linha) => `${l.colecao}\u0000${l.id}`;
+function fotografar(d: DB) {
+  gs.__smsnap = new Map(paraLinhas(d).map((l) => [chave(l), JSON.stringify(l.data)]));
+}
+
+/** Carrega o estado. Chame (com await) no início de cada página, layout e rota.
+ *  `fresco` força leitura do banco (use antes de alterações). */
+export async function carregar(fresco = false): Promise<DB> {
+  if (!supabaseAtivo()) return db();
+  const recente = gs.__smloadedAt && Date.now() - gs.__smloadedAt < 1500;
+  if (g.__smdb && recente && !fresco) return g.__smdb;
+  if (gs.__smload && !fresco) {
+    await gs.__smload;
+    return g.__smdb!;
+  }
+  gs.__smload = (async () => {
+    const linhas = await rpc<Linha[]>("sm_carregar", {});
+    if (!linhas.length) {
+      g.__smdb = seed();
+      gs.__smsnap = new Map();
+      await save();
+    } else {
+      g.__smdb = deLinhas(linhas);
+      fotografar(g.__smdb);
+    }
+    gs.__smloadedAt = Date.now();
+  })();
   try {
-    g.__smdb = JSON.parse(fs.readFileSync(FILE, "utf8")) as DB;
-  } catch {
-    g.__smdb = seed();
-    save();
+    await gs.__smload;
+  } finally {
+    gs.__smload = null;
   }
   return g.__smdb!;
 }
 
-export function save() {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(g.__smdb, null, 1));
+export function db(): DB {
+  if (g.__smdb) return g.__smdb;
+  if (supabaseAtivo()) throw new Error("db() chamado antes de carregar()");
+  try {
+    g.__smdb = JSON.parse(fs.readFileSync(FILE, "utf8")) as DB;
+  } catch {
+    g.__smdb = seed();
+    void save();
+  }
+  return g.__smdb!;
 }
 
-export function resetDb() {
-  g.__smdb = seed();
-  save();
+/** Persiste somente os registros alterados desde a última leitura. */
+export async function save() {
+  if (!supabaseAtivo()) {
+    fs.mkdirSync(path.dirname(FILE), { recursive: true });
+    fs.writeFileSync(FILE, JSON.stringify(g.__smdb, null, 1));
+    return;
+  }
+  const atuais = paraLinhas(g.__smdb!);
+  const snap = gs.__smsnap ?? new Map();
+  const mudaram = atuais.filter((l) => snap.get(chave(l)) !== JSON.stringify(l.data));
+  const vivos = new Set(atuais.map(chave));
+  const apagar = [...snap.keys()].filter((k) => !vivos.has(k)).map((k) => {
+    const [colecao, id] = k.split("\u0000");
+    return { colecao, id };
+  });
+  if (!mudaram.length && !apagar.length) return;
+  for (let i = 0; i < Math.max(mudaram.length, 1); i += 400)
+    await rpc("sm_gravar", { p_linhas: mudaram.slice(i, i + 400), p_apagar: i === 0 ? apagar : [] });
+  fotografar(g.__smdb!);
+  gs.__smloadedAt = Date.now();
+}
+
+export async function resetDb() {
+  if (supabaseAtivo()) {
+    // preserva as contas reais; restaura os dados de demonstração
+    const reais = (g.__smdb?.usuarios ?? []).filter((u) => !["u_demo", "u_admin"].includes(u.id));
+    await rpc("sm_apagar_tudo", {});
+    g.__smdb = seed();
+    g.__smdb.usuarios.push(...reais);
+    gs.__smsnap = new Map();
+  } else g.__smdb = seed();
+  await save();
 }
 
 export function audit(usuario_id: string, acao: string, entidade: string, detalhe?: string) {

@@ -29,14 +29,23 @@ const NAV = {
   ],
 };
 
-export function Shell({ area, user, saldo, modoDemo, children }: { area: "cliente" | "admin"; user: { nome: string; perfil: string }; saldo?: number; modoDemo: { ia: boolean; asaas: boolean }; children: React.ReactNode }) {
+export function Shell({ area, user, saldo, modoDemo, podeAdmin = false, real = false, children }: { area: "cliente" | "admin"; user: { nome: string; perfil: string }; saldo?: number; modoDemo: { ia: boolean; asaas: boolean }; podeAdmin?: boolean; real?: boolean; children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const items = NAV[area];
   const active = (href: string) => (href === "/app" || href === "/admin" ? path === href : path.startsWith(href));
 
+  async function sair() {
+    await fetch("/api/auth/sair", { method: "POST" });
+    router.push("/");
+    router.refresh();
+  }
   async function trocar(perfil: "cliente" | "admin") {
+    if (real) {
+      router.push(perfil === "admin" ? "/admin" : "/app");
+      return;
+    }
     const r = await fetch("/api/sessao", { method: "POST", body: JSON.stringify({ perfil }) }).then((r) => r.json());
     router.push(r.destino);
     router.refresh();
@@ -89,19 +98,23 @@ export function Shell({ area, user, saldo, modoDemo, children }: { area: "client
           </div>
           <div className="min-w-0">
             <div className="truncate font-medium text-white">{user.nome}</div>
-            <div className="text-ink-400">{user.perfil === "admin" ? "Administrador" : "Cliente"}</div>
+            <div className="text-ink-400">{user.perfil === "admin" ? "Administrador" : user.perfil === "qualidade" ? "Qualidade" : "Cliente"}</div>
           </div>
         </div>
         <div className="mt-3 flex gap-1.5">
-          <button onClick={() => trocar(area === "admin" ? "cliente" : "admin")} className="btn btn-ghost flex-1 !px-2 !py-1.5 !text-[11px]">
-            <BadgeCheck className="size-3.5" /> {area === "admin" ? "Ver como cliente" : "Ver como admin"}
+          {(podeAdmin || !real) && (
+            <button onClick={() => trocar(area === "admin" ? "cliente" : "admin")} className="btn btn-ghost flex-1 !px-2 !py-1.5 !text-[11px]">
+              <BadgeCheck className="size-3.5" /> {area === "admin" ? "Ver como cliente" : "Ver como admin"}
+            </button>
+          )}
+          {(user.perfil === "admin" || !real) && (
+            <button onClick={reset} title="Restaurar dados de demonstração" className="btn btn-ghost !px-2 !py-1.5">
+              <RotateCcw className="size-3.5" />
+            </button>
+          )}
+          <button onClick={sair} title="Sair" className={clsx("btn btn-ghost !px-2 !py-1.5", real && !podeAdmin && "flex-1")}>
+            <LogOut className="size-3.5" />{real && !podeAdmin && <span className="!text-[11px]">Sair</span>}
           </button>
-          <button onClick={reset} title="Restaurar dados de demonstração" className="btn btn-ghost !px-2 !py-1.5">
-            <RotateCcw className="size-3.5" />
-          </button>
-          <Link href="/" title="Sair" className="btn btn-ghost !px-2 !py-1.5">
-            <LogOut className="size-3.5" />
-          </Link>
         </div>
       </div>
     </aside>

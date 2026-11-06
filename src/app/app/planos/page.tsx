@@ -1,12 +1,12 @@
 import { cookies } from "next/headers";
 import { db, saldo } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { exigirUsuario } from "@/lib/session";
 import { Badge, PageHeader } from "@/components/ui";
 import { Checkout } from "./Checkout";
 
 export default async function Planos({ searchParams }: { searchParams: Promise<{ defesa?: string }> }) {
   const { defesa } = await searchParams;
-  const u = await usuarioAtual();
+  const u = await exigirUsuario();
   const d = db();
   const ref = (await cookies()).get("sm_ref")?.value;
   const parceiro = ref ? d.parceiros.find((p) => p.slug_link === ref) : undefined;

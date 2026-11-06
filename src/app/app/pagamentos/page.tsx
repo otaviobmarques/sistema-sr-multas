@@ -1,12 +1,12 @@
 import { db, saldo } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { exigirUsuario } from "@/lib/session";
 import { Badge, Card, CardTitle, PageHeader, Stat, brl, dataBR } from "@/components/ui";
 
 const ST = { pago: ["Pago", "ok"], aguardando_pagamento: ["Aguardando", "warn"], vencido: ["Vencido", "bad"], estornado: ["Estornado", "bad"], em_analise: ["Em análise", "info"] } as const;
 const MET = { PIX: "Pix", CREDIT_CARD: "Cartão", BOLETO: "Boleto" };
 
 export default async function Pagamentos() {
-  const u = await usuarioAtual();
+  const u = await exigirUsuario();
   const d = db();
   const pedidos = d.pedidos.filter((p) => p.usuario_id === u.id);
   const extrato = d.carteira.filter((c) => c.usuario_id === u.id);

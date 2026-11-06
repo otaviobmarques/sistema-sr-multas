@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { exigirUsuario } from "@/lib/session";
 import { Peca } from "@/components/Peca";
 import { AutoPrint } from "./AutoPrint";
 
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 /** Versão para impressão / "Salvar como PDF" em Verdana. */
 export default async function Imprimir({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const u = await usuarioAtual();
+  const u = await exigirUsuario();
   const defesa = db().defesas.find((x) => x.id === id && x.dono_id === u.id);
   const v = defesa?.versoes.at(-1);
   if (!defesa || !v) notFound();

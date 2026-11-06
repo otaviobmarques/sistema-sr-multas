@@ -1,3 +1,4 @@
+import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Bar, Card, CardTitle, PageHeader, Stat, brl } from "@/components/ui";
 
@@ -5,7 +6,8 @@ const ARG: Record<string, string> = { R01: "Notificação fora do prazo", R02: "
 // Base ilustrativa do mês (somada aos dados reais desta instalação)
 const BASE = { receita: 48320, defesas: 612, porPlano: { avulso: 231, pack5: 64, pack20: 12, personalizado: 5 } as Record<string, number> };
 
-export default function VisaoGeral() {
+export default async function VisaoGeral() {
+  await exigirAdmin();
   const d = db();
   const pagos = d.pedidos.filter((p) => p.status === "pago");
   const receita = BASE.receita + pagos.reduce((s, p) => s + p.valor, 0);

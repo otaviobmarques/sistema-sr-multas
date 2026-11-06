@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { audit, db, save, uid } from "@/lib/db";
 import { asaasAtivo, criarCobranca, garantirCliente } from "@/lib/asaas";
-import { usuarioAtual } from "@/lib/session";
+import { naoAutorizado, usuarioAtual } from "@/lib/session";
 
 /** Etapa 6 / cap. 8.2: cria (ou reutiliza) o cliente no Asaas e a cobrança, com split se houver parceiro. */
 export async function POST(req: Request) {
-  const u = await usuarioAtual();
+  const u = await usuarioAtual(true);
+  if (!u) return naoAutorizado();
   const d = db();
   const { plano_id, metodo, parcelas } = (await req.json()) as { plano_id: string; metodo: "PIX" | "CREDIT_CARD" | "BOLETO"; parcelas?: number };
   const plano = d.planos.find((p) => p.id === plano_id);
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       criado_em: new Date().toISOString(),
     });
     audit(u.id, "cobranca_criada", `pedido:${pedidoId}`, `${plano.nome} · ${metodo}`);
-    save();
+    await save();
     return NextResponse.json({ pedido: d.pedidos[0], demo: !asaasAtivo() });
   } catch (e) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 502 });

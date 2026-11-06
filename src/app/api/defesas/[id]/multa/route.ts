@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, save, audit } from "@/lib/db";
 import { analisar, identificarRemetente } from "@/lib/servico";
-import { usuarioAtual } from "@/lib/session";
+import { naoAutorizado, usuarioAtual } from "@/lib/session";
 import type { Multa } from "@/lib/types";
 
 const EDITAVEIS: (keyof Multa)[] = ["placa", "numero_auto", "orgao", "esfera", "tipo", "enquadramento", "descricao", "local", "data_infracao", "data_expedicao", "prazo", "fase", "agente_ou_equipamento", "marca_especie", "velocidade_medida", "velocidade_limite", "equipamento_afericao"];
@@ -9,7 +9,8 @@ const EDITAVEIS: (keyof Multa)[] = ["placa", "numero_auto", "orgao", "esfera", "
 /** Cliente confirma/corrige os campos extraídos -> reauditoria determinística. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const u = await usuarioAtual();
+  const u = await usuarioAtual(true);
+  if (!u) return naoAutorizado();
   const d = db();
   const defesa = d.defesas.find((x) => x.id === id && x.dono_id === u.id);
   if (!defesa) return NextResponse.json({ erro: "Não encontrada" }, { status: 404 });
@@ -27,6 +28,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (defesa.status === "fora_do_escopo") defesa.status = "em_analise";
   analisar(multa, defesa);
   audit(u.id, "campos_confirmados", `multa:${multa.id}`);
-  save();
+  await save();
   return NextResponse.json({ ok: true, defesa, multa });
 }

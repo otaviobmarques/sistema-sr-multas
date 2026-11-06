@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { audit, db, save } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { naoAutorizado, usuarioAtual } from "@/lib/session";
 
 const DECLARACOES = ["data_hora", "local", "condutor", "documentos"];
 
 /** Etapas 11–12: validação dos fatos pelo cliente + assinatura eletrônica. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const u = await usuarioAtual();
+  const u = await usuarioAtual(true);
+  if (!u) return naoAutorizado();
   const d = db();
   const defesa = d.defesas.find((x) => x.id === id && x.dono_id === u.id);
   if (!defesa || !defesa.versoes.length) return NextResponse.json({ erro: "Defesa não encontrada" }, { status: 404 });
@@ -19,6 +20,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   defesa.assinada_em = agora;
   defesa.status = "pronta_para_protocolar";
   audit(u.id, "defesa_assinada", `defesa:${defesa.id}`, `v${defesa.versoes.at(-1)!.versao}`);
-  save();
+  await save();
   return NextResponse.json({ ok: true, defesa });
 }

@@ -1,10 +1,12 @@
+import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
 import { AMOSTRA_MINIMA } from "@/lib/rules";
 import { Badge, Bar, Card, PageHeader } from "@/components/ui";
 
 const ARG: Record<string, string> = { R01: "Notificação fora do prazo", R02: "Campos obrigatórios do auto", R03: "Aferição do equipamento", R04: "Competência do órgão", R05: "Erro de enquadramento" };
 
-export default function Jurimetria() {
+export default async function Jurimetria() {
+  await exigirAdmin();
   const d = db();
   const rows = [...d.jurimetria].sort((a, b) => b.exito / b.uso - a.exito / a.uso);
   return (

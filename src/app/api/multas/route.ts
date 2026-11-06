@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { extrair } from "@/lib/ai/extractor";
 import { multaDeExtracao, registrarMulta } from "@/lib/servico";
-import { usuarioAtual } from "@/lib/session";
+import { naoAutorizado, usuarioAtual } from "@/lib/session";
 import { db, save, uid } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -9,7 +9,8 @@ const TIPOS = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
 /** Etapas 1–5: recebe a notificação, extrai (IA), classifica escopo, audita por regras e estima. */
 export async function POST(req: Request) {
-  const u = await usuarioAtual();
+  const u = await usuarioAtual(true);
+  if (!u) return naoAutorizado();
   const form = await req.formData();
   const file = form.get("arquivo");
   if (!(file instanceof File)) return NextResponse.json({ erro: "Envie a foto ou PDF da notificação" }, { status: 400 });
@@ -26,10 +27,10 @@ export async function POST(req: Request) {
     const multa = multaDeExtracao(dados, u.id, file.name);
     if (dados.instrucoes_suspeitas) {
       db().trava.unshift({ id: uid("tr"), defesa_id: "-", caso: `#${multa.id.slice(-4)}`, acao: "anexo_sinalizado", motivo: "Texto oculto tratado como dado", data: new Date().toISOString() });
-      save();
+      await save();
     }
     if (!dados.legivel) multa.confianca.legibilidade = 0.3;
-    const defesa = registrarMulta(multa);
+    const defesa = await registrarMulta(multa);
     return NextResponse.json({ defesa_id: defesa.id, modo });
   } catch (e) {
     return NextResponse.json({ erro: (e as Error).message }, { status: 500 });

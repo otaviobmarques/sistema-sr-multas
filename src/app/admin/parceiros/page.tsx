@@ -1,7 +1,9 @@
+import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Badge, Card, CardTitle, PageHeader, brl } from "@/components/ui";
 
-export default function Parceiros() {
+export default async function Parceiros() {
+  await exigirAdmin();
   const d = db();
   const ilustr: Record<string, number> = { par_1: 38, par_2: 22, par_3: 17, par_4: 41, par_5: 0 };
   const ticket = 69.8;

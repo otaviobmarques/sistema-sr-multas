@@ -1,3 +1,4 @@
+import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Badge, Card, CardTitle, PageHeader, Stat } from "@/components/ui";
 import { Amostra } from "./Amostra";
@@ -10,7 +11,8 @@ const ACAO = {
   liberada: ["Liberada", "ok"],
 } as const;
 
-export default function Qualidade() {
+export default async function Qualidade() {
+  await exigirAdmin();
   const d = db();
   const c = (a: string) => d.trava.filter((t) => t.acao === a).length;
   const geradas = d.defesas.filter((x) => x.versoes.length);

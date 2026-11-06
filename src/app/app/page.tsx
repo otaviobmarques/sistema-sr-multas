@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Bot, CalendarClock, FileText, Upload, Sparkles } from "lucide-react";
 import { db, saldo } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { exigirUsuario } from "@/lib/session";
 import { gravidade } from "@/lib/valores";
 import { Card, CardTitle, Stat, StatusBadge, brl, dataBR, FASES } from "@/components/ui";
 
 export default async function Inicio() {
-  const u = await usuarioAtual();
+  const u = await exigirUsuario();
   const d = db();
   const defs = d.defesas.filter((x) => x.dono_id === u.id).map((df) => ({ df, m: d.multas.find((m) => m.id === df.multa_id)! }));
   const deferidas = defs.filter((x) => x.df.status === "deferida");

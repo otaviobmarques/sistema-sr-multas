@@ -1,7 +1,9 @@
+import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Badge, Card, CardTitle, PageHeader, Stat, brl } from "@/components/ui";
 
-export default function Financeiro() {
+export default async function Financeiro() {
+  await exigirAdmin();
   const d = db();
   const pagos = d.pedidos.filter((p) => p.status === "pago");
   const pend = d.pedidos.filter((p) => p.status === "aguardando_pagamento");

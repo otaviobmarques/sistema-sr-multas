@@ -1,10 +1,10 @@
 import { Car, Radar } from "lucide-react";
 import { db } from "@/lib/db";
-import { usuarioAtual } from "@/lib/session";
+import { exigirUsuario } from "@/lib/session";
 import { Badge, Card, PageHeader } from "@/components/ui";
 
 export default async function Veiculos() {
-  const u = await usuarioAtual();
+  const u = await exigirUsuario();
   const d = db();
   const veiculos = d.veiculos.filter((v) => v.dono_id === u.id);
   return (
