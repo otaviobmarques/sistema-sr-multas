@@ -1,9 +1,0 @@
-{
-  "name": "Senhor Multas",
-  "short_name": "Sr. Multas",
-  "start_url": "/app",
-  "display": "standalone",
-  "background_color": "#f5f3ef",
-  "theme_color": "#05070f",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
-}
