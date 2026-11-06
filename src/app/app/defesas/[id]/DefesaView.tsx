@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { CheckCircle2, Download, FileSignature, History, Loader2, Printer, Send, ShieldCheck, Sparkles, Stamp, Wand2, XCircle } from "lucide-react";
 import { Badge, Card, CardTitle, StatusBadge, dataBR, FASES } from "@/components/ui";
 import { Peca } from "@/components/Peca";
+import { Resultado } from "./Resultado";
 import type { Defesa, Multa } from "@/lib/types";
 
 const DECL = [
@@ -120,9 +121,7 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
               </div>
             </Card>
           ) : (
-            <Card className="!border-ok/30">
-              <div className="flex gap-3"><CheckCircle2 className="size-5 text-ok" /><div><div className="font-semibold text-white">Protocolada · {defesa.protocolo}</div><p className="mt-1 text-sm text-ink-400">Acompanhamos o julgamento e avisamos sobre a próxima fase — sem novo crédito.</p></div></div>
-            </Card>
+            <Resultado defesa={defesa} />
           )}
 
           <Card>

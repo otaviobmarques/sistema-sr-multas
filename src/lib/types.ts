@@ -153,6 +153,9 @@ export interface Defesa {
   assinada_em?: string | null;
   protocolo?: string | null;
   resultado?: "deferida" | "indeferida" | null;
+  resultado_em?: string | null;
+  fase_anterior_id?: string | null; // defesa da fase anterior (JARI ← defesa prévia; CETRAN ← JARI)
+  proxima_fase_id?: string | null;
   tempo_geracao_s?: number;
   criado_em: string;
 }
