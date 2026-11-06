@@ -210,7 +210,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-xs text-ink-400">
           <Logo size={24} />
           <p className="max-w-xl">A defesa é gerada por IA, validada e assinada pelo próprio interessado. O Senhor Multas não garante resultado: a decisão é do órgão julgador.</p>
-          <p>© {new Date().getFullYear()} Senhor Multas</p>
+          <p className="flex gap-4"><Link href="/termos" className="hover:text-white">Termos de uso</Link><Link href="/privacidade" className="hover:text-white">Privacidade</Link><span>© {new Date().getFullYear()} Senhor Multas</span></p>
         </div>
       </footer>
     </div>

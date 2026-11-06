@@ -1,5 +1,6 @@
 import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
+import { ConcluirLGPD } from "./ConcluirLGPD";
 import { Bar, Card, CardTitle, PageHeader, Stat, brl } from "@/components/ui";
 
 const ARG: Record<string, string> = { R01: "Notificação fora do prazo", R02: "Campos obrigatórios do auto", R03: "Aferição do equipamento", R04: "Competência do órgão", R05: "Erro de enquadramento" };
@@ -24,6 +25,7 @@ export default async function VisaoGeral() {
       return acc;
     }, {}),
   ).sort((a, b) => b.uso - a.uso);
+  const lgpd = d.solicitacoes_lgpd.filter((s) => s.status === "aberta");
   const cont = (a: string) => d.trava.filter((t) => t.acao === a).length;
 
   return (
@@ -73,6 +75,24 @@ export default async function VisaoGeral() {
             {[["Citações bloqueadas pelo verificador", cont("citacao_removida")], ["Peças em modo conservador", cont("modo_conservador")], ["Casos fora do escopo", cont("fora_do_escopo")], ["Tentativas de comando oculto em anexos", cont("anexo_sinalizado")]].map(([k, v]) => (
               <div key={k} className="flex justify-between py-2.5"><span className="text-ink-200">{k}</span><span className="font-mono text-ink-300">{v}</span></div>
             ))}
+          </div>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardTitle>Pedidos de titulares (LGPD) · prazo de resposta: 15 dias</CardTitle>
+          {lgpd.length === 0 && <p className="text-sm text-ink-400">Nenhum pedido em aberto.</p>}
+          <div className="divide-y divide-white/5 text-sm">
+            {lgpd.map((p) => {
+              const dias = Math.floor((Date.now() - new Date(p.data).getTime()) / 86_400_000);
+              return (
+                <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
+                  <div>
+                    <div className="text-white">{p.tipo === "exclusao" ? "Exclusão da conta" : p.tipo === "correcao" ? "Correção de dados" : "Outro"} · {p.nome} <span className="text-ink-400">({p.email})</span></div>
+                    {p.detalhe && <div className="text-xs text-ink-400">{p.detalhe}</div>}
+                  </div>
+                  <div className="flex items-center gap-2"><span className={`text-xs ${dias > 10 ? "text-bad" : "text-ink-400"}`}>há {dias} dia(s)</span><ConcluirLGPD id={p.id} /></div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       </div>

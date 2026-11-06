@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (nome.split(" ").length < 2) return NextResponse.json({ erro: "Informe nome e sobrenome" }, { status: 400 });
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ erro: "E-mail inválido" }, { status: 400 });
   if (doc.length !== 11 && doc.length !== 14) return NextResponse.json({ erro: "CPF ou CNPJ inválido" }, { status: 400 });
-  if (senha.length < 8) return NextResponse.json({ erro: "A senha precisa ter ao menos 8 caracteres" }, { status: 400 });
+  if (senha.length < 10 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return NextResponse.json({ erro: "A senha precisa ter ao menos 10 caracteres, com letras e números" }, { status: 400 });
   if (!b.aceite) return NextResponse.json({ erro: "É preciso aceitar os termos de uso" }, { status: 400 });
 
   let uid: string;

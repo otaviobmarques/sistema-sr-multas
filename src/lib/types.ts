@@ -286,7 +286,21 @@ export interface AlertaLei {
   resolvido: boolean;
 }
 
+/** Pedido do titular (LGPD, art. 18): exclusão, correção etc. */
+export interface SolicitacaoLGPD {
+  id: string;
+  usuario_id: string;
+  nome: string;
+  email: string;
+  tipo: "exclusao" | "correcao" | "outro";
+  detalhe?: string | null;
+  status: "aberta" | "concluida";
+  data: string;
+  concluida_em?: string | null;
+}
+
 export interface DB {
+  solicitacoes_lgpd: SolicitacaoLGPD[];
   validacoes_regras: ValidacaoRegra[];
   alertas_leis: AlertaLei[];
   usuarios: Usuario[];
