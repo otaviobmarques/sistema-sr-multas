@@ -3,6 +3,12 @@ import { createServerClient } from "@supabase/ssr";
 
 /** Renova a sessão do Supabase Auth e protege as áreas logadas. */
 export async function middleware(req: NextRequest) {
+  // app.senhormultas.com.br abre direto a área do cliente
+  if (req.headers.get("host")?.startsWith("app.") && req.nextUrl.pathname === "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/app";
+    return NextResponse.redirect(url);
+  }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return NextResponse.next();
   let res = NextResponse.next({ request: req });
   const supa = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -27,5 +33,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/admin/:path*", "/imprimir/:path*", "/api/((?!webhooks).*)"],
+  matcher: ["/", "/app/:path*", "/admin/:path*", "/imprimir/:path*", "/api/((?!webhooks).*)"],
 };
