@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Bot, CheckCircle2, FileCheck2, Fingerprint, Gauge, Lock, Radar, ScanText, ShieldCheck, Sparkles, Store, Workflow } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileCheck2, Fingerprint, Gauge, Lock, Radar, ScanText, ShieldCheck, Sparkles, Store, Workflow } from "lucide-react";
 import { Logo, brl } from "@/components/ui";
+import { SenhorCoruja, SenhorPlaca, SenhorTerno } from "@/components/Marca";
 import { EntrarBotoes } from "./EntrarBotoes";
 
 const PLANOS = [
@@ -22,6 +23,7 @@ export default function Home() {
           <a href="#como" className="hover:text-white">Como funciona</a>
           <a href="#seguranca" className="hover:text-white">Segurança</a>
           <a href="#planos" className="hover:text-white">Planos</a>
+          <a href="#turma" className="hover:text-white">A turma</a>
           <a href="#parceiros" className="hover:text-white">Parceiros</a>
         </nav>
         <EntrarBotoes compact />
@@ -51,6 +53,7 @@ export default function Home() {
 
         {/* Mock visual */}
         <div className="relative rise" style={{ animationDelay: ".15s" }}>
+          <SenhorPlaca className="absolute -right-16 -top-24 z-10 hidden h-32 rotate-6 drop-shadow-[0_10px_25px_rgba(0,0,0,.5)] lg:block" />
           <div className="panel ring-ia relative overflow-hidden p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-ink-400"><ScanText className="size-4 text-ia" /> notificacao_autuacao.pdf</div>
@@ -119,7 +122,8 @@ export default function Home() {
             <div>
               <div className="label text-ok">Segurança automatizada</div>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Nenhuma citação sem fonte verificada.</h2>
-              <p className="mt-4 text-ink-300">A IA não inventa leis. Um verificador independente confere cada trecho na fonte oficial; o que não for confirmado sai da peça — sem exceção.</p>
+              <div className="mb-5 mt-6 inline-flex items-center gap-3 rounded-2xl bg-[#f5f3ef] py-2 pl-2 pr-4"><SenhorCoruja className="h-16" /><span className="text-xs font-semibold text-[#13294b]">O Senhor Coruja confere<br />cada citação na fonte oficial.</span></div>
+              <p className="text-ink-300">A IA não inventa leis. Um verificador independente confere cada trecho na fonte oficial; o que não for confirmado sai da peça — sem exceção.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
@@ -160,6 +164,27 @@ export default function Home() {
         <p className="mt-6 text-center text-xs text-ink-400">Valores ilustrativos. Frotas e empresas: plano Personalizado com franquia mensal.</p>
       </section>
 
+      {/* MASCOTES */}
+      <section id="turma" className="relative z-10 mx-auto max-w-7xl px-5 py-20">
+        <div className="text-center">
+          <div className="label text-brand">A turma do Senhor Multas</div>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">Quem cuida da sua multa</h2>
+        </div>
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {[
+            { n: "1 · O Senhor Placa", d: "A própria placa do logo ganha vida, com cartola e bigode de “Senhor”, rasgando a multa.", bg: "#f5f3ef", M: SenhorPlaca },
+            { n: "2 · O Senhor de Terno", d: "Um senhor de verdade, experiente e de confiança. É ele quem te atende no app e no WhatsApp.", bg: "#e6edf7", M: SenhorTerno },
+            { n: "3 · O Senhor Coruja", d: "Símbolo de sabedoria e do Direito: confere cada lei na fonte oficial. Os olhos âmbar lembram faróis.", bg: "#f5f3ef", M: SenhorCoruja },
+          ].map(({ n, d, bg, M }) => (
+            <div key={n} className="group overflow-hidden rounded-2xl p-6 text-center transition hover:-translate-y-1" style={{ background: bg }}>
+              <div className="text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#13294b]">{n}</div>
+              <M className="mx-auto mt-4 h-56 transition duration-300 group-hover:scale-[1.04]" />
+              <p className="mx-auto mt-4 max-w-xs text-sm font-medium leading-relaxed text-[#13294b]/80">{d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* PARCEIROS */}
       <section id="parceiros" className="relative z-10 mx-auto max-w-7xl px-5 py-20">
         <div className="grid items-center gap-8 md:grid-cols-[auto_1fr_auto]">
@@ -174,7 +199,7 @@ export default function Home() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-5 pb-20">
         <div className="panel flex flex-col items-center gap-6 p-10 text-center md:p-14">
-          <Bot className="size-10 text-brand" />
+          <div className="grid size-28 place-items-center overflow-hidden rounded-full bg-[#e6edf7] ring-4 ring-brand/30"><SenhorTerno soRosto className="mt-2 size-24" /></div>
           <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-white">Recebeu uma multa? Fale com o Sr. Multas.</h2>
           <p className="max-w-xl text-ink-400">Atendimento 24h no app e no WhatsApp. Ele lê a notificação, explica o prazo e mostra se vale recorrer.</p>
           <EntrarBotoes />

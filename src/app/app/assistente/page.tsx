@@ -5,6 +5,15 @@ import Link from "next/link";
 import clsx from "clsx";
 import { Camera, Loader2, Paperclip, Send, UserRound, FileText } from "lucide-react";
 import { prepararArquivo } from "@/lib/foto";
+import { SenhorTerno } from "@/components/Marca";
+
+function Avatar({ size }: { size: number }) {
+  return (
+    <div className="relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-[#e6edf7]" style={{ width: size, height: size }}>
+      <SenhorTerno soRosto className="mt-[8%] h-[92%]" />
+    </div>
+  );
+}
 import type { MensagemChat } from "@/lib/types";
 
 function Md({ t }: { t: string }) {
@@ -53,8 +62,8 @@ export default function Assistente() {
   return (
     <div className="mx-auto flex h-[calc(100vh-9rem)] max-w-3xl flex-col">
       <div className="panel flex items-center gap-3 rounded-b-none !border-b-0 px-5 py-4">
-        <div className="relative grid size-10 place-items-center rounded-full bg-gradient-to-br from-brand-soft to-brand text-sm font-extrabold text-[#1a1203]">
-          SM
+        <div className="relative">
+          <Avatar size={44} />
           <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-ink-900 bg-ok" />
         </div>
         <div>
@@ -105,7 +114,7 @@ export default function Assistente() {
 function Bolha({ papel, children }: { papel: "user" | "assistant"; children: React.ReactNode }) {
   return (
     <div className={clsx("flex gap-3", papel === "user" && "justify-end")}>
-      {papel === "assistant" && <div className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-soft to-brand text-[10px] font-extrabold text-[#1a1203]">SM</div>}
+      {papel === "assistant" && <Avatar size={32} />}
       <div className={clsx("max-w-[80%] space-y-1 rounded-2xl px-4 py-3 text-sm leading-relaxed", papel === "user" ? "rounded-br-md bg-ia/12 text-ink-200 ring-1 ring-ia/25" : "rounded-bl-md bg-white/[.04] text-ink-300 ring-1 ring-white/8")}>
         {children}
       </div>

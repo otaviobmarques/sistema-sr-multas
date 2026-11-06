@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui";
+import { SenhorPlaca } from "@/components/Marca";
 import { EntrarBotoes } from "../EntrarBotoes";
 import { AuthForm } from "./AuthForm";
 
@@ -11,8 +12,9 @@ export default function Entrar() {
     <div className="relative grid min-h-screen place-items-center px-4 py-10">
       <div className="pointer-events-none absolute inset-0 bg-grid [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-80 w-[700px] -translate-x-1/2 rounded-full bg-brand/10 blur-[100px]" />
-      <div className="panel relative w-full max-w-md p-7 text-center sm:p-8">
-        <Link href="/" className="flex justify-center"><Logo size={40} /></Link>
+      <div className="panel relative mt-16 w-full max-w-md p-7 pt-14 text-center sm:p-8 sm:pt-14">
+        <div className="absolute -top-16 left-1/2 grid size-28 -translate-x-1/2 place-items-center overflow-hidden rounded-full bg-[#f5f3ef] ring-4 ring-ink-950"><SenhorPlaca className="h-28 translate-y-3" /></div>
+        <Link href="/" className="mt-2 flex justify-center"><Logo size={40} /></Link>
         {real ? (
           <>
             <h1 className="mt-6 text-xl font-semibold text-white">Acesse sua conta</h1>

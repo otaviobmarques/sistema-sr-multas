@@ -6,6 +6,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { AlertTriangle, Camera, CheckCircle2, FileUp, Loader2, Scale, ScanText, Search, ShieldCheck, Sparkles, PenLine, Info, UserCheck, UserX, RotateCcw } from "lucide-react";
 import { prepararArquivo } from "@/lib/foto";
+import { SenhorCoruja, SenhorPlaca } from "@/components/Marca";
 import { Badge, Bar, Card, CardTitle, RESULTADO, StatusBadge, brl } from "@/components/ui";
 import type { Defesa, Multa } from "@/lib/types";
 
@@ -134,8 +135,8 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
         >
           <input ref={inputRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => e.target.files?.[0] && enviar(e.target.files[0])} disabled={enviando} />
           {enviando && <div className="scan-line" />}
-          <div className={clsx("grid size-16 place-items-center rounded-2xl ring-1", enviando ? "bg-ia/10 ring-ia/30" : "bg-brand/10 ring-brand/30")}>
-            {enviando ? <ScanText className="size-7 animate-pulse text-ia" /> : <FileUp className="size-7 text-brand" />}
+          <div className={clsx("grid size-36 place-items-center rounded-full bg-[#f5f3ef] ring-4 transition", enviando ? "ring-ia/40" : "ring-brand/25")}>
+            <SenhorPlaca className={clsx("h-32 translate-y-2", enviando && "animate-pulse")} />
           </div>
           <h2 className="mt-6 text-lg font-semibold text-white">{enviando ? "Lendo sua notificação…" : "Arraste a notificação aqui"}</h2>
           <p className="mt-2 max-w-sm text-sm text-ink-400">
@@ -292,6 +293,10 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
           <div className="panel p-5">
             {gerando ? (
               <div className="space-y-3">
+                <div className="flex items-center gap-3 rounded-xl bg-[#f5f3ef] p-2 pr-4">
+                  <SenhorCoruja className="h-14 shrink-0 animate-pulse" />
+                  <span className="text-sm font-semibold text-[#13294b]">O Senhor Coruja está preparando e conferindo a sua defesa…</span>
+                </div>
                 {ETAPAS_GERACAO.map(({ i: I, t, d }, n) => (
                   <div key={t} className={clsx("flex items-center gap-3 rounded-xl border p-3 transition", n <= etapa ? "border-ia/30 bg-ia/5" : "border-white/5 opacity-40")}>
                     {n < etapa ? <CheckCircle2 className="size-5 text-ok" /> : n === etapa ? <Loader2 className="size-5 animate-spin text-ia" /> : <I className="size-5 text-ink-400" />}

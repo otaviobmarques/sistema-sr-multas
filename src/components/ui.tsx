@@ -1,21 +1,7 @@
 import clsx from "clsx";
 import type { ResultadoRegra, StatusDefesa } from "@/lib/types";
 
-export function Logo({ size = 32 }: { size?: number }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div
-        className="grid place-items-center rounded-[10px] font-extrabold text-[#1a1203] shadow-[0_0_24px_-4px_rgba(245,165,36,.7)]"
-        style={{ width: size, height: size, fontSize: size * 0.38, background: "linear-gradient(135deg,#ffc861,#f09a12)" }}
-      >
-        SM
-      </div>
-      <span className="font-semibold tracking-tight text-white">
-        Senhor <span className="text-brand">Multas</span>
-      </span>
-    </div>
-  );
-}
+export { Logo } from "./Marca";
 
 export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
   return <div className={clsx("panel p-5", className)}>{children}</div>;

@@ -14,8 +14,8 @@
   --color-ink-300: #a3aec9;
   --color-ink-200: #cdd5e8;
 
-  --color-brand: #f5a524;
-  --color-brand-soft: #ffc861;
+  --color-brand: #f2b705;
+  --color-brand-soft: #ffd24d;
   --color-ia: #38d6f5;
   --color-ok: #34d399;
   --color-warn: #fbbf24;
@@ -46,7 +46,7 @@ body {
   background-size: 44px 44px;
 }
 .glow-brand {
-  background: radial-gradient(600px circle at var(--x, 20%) var(--y, 0%), rgb(245 165 36 / 0.16), transparent 60%);
+  background: radial-gradient(600px circle at var(--x, 20%) var(--y, 0%), rgb(242 183 5 / 0.16), transparent 60%);
 }
 .glow-ia {
   background: radial-gradient(700px circle at 80% 10%, rgb(56 214 245 / 0.12), transparent 60%);
@@ -63,7 +63,7 @@ body {
   transition: border-color 0.2s, transform 0.2s, background 0.2s;
 }
 .panel-hover:hover {
-  border-color: rgb(245 165 36 / 0.35);
+  border-color: rgb(242 183 5 / 0.35);
 }
 
 .text-gradient {
@@ -94,9 +94,9 @@ body {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: linear-gradient(180deg, #ffb83d, #f09a12);
+  background: linear-gradient(180deg, #ffcb33, #e6a700);
   color: #1a1203;
-  box-shadow: 0 8px 24px -10px rgb(245 165 36 / 0.7), inset 0 1px 0 rgb(255 255 255 / 0.35);
+  box-shadow: 0 8px 24px -10px rgb(242 183 5 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
 .btn-primary:hover:not(:disabled) {
   filter: brightness(1.07);
@@ -129,8 +129,8 @@ body {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .input:focus {
-  border-color: rgb(245 165 36 / 0.6);
-  box-shadow: 0 0 0 3px rgb(245 165 36 / 0.15);
+  border-color: rgb(242 183 5 / 0.6);
+  box-shadow: 0 0 0 3px rgb(242 183 5 / 0.15);
 }
 .label {
   font-size: 0.7rem;
