@@ -115,6 +115,8 @@ function seed(): DB {
     alertas_leis: [],
     solicitacoes_lgpd: [],
     config: [],
+    tokens: [],
+    emails: [],
     planos: [
       { id: "avulso", nome: "Avulso", creditos: 1, preco: 79.9, validade_meses: 12, beneficios: ["Análise com IA", "Defesa Pronta validada", "Acompanhamento de prazos"], cobranca: "Pix, cartão ou boleto" },
       { id: "pack5", nome: "Até 5 defesas", creditos: 5, preco: 349, validade_meses: 12, destaque: true, beneficios: ["Tudo do Avulso", "Créditos válidos por 12 meses", "Vários veículos"], cobranca: "À vista ou parcelado no cartão" },
@@ -182,7 +184,7 @@ function paraLinhas(d: DB): Linha[] {
 }
 
 function deLinhas(linhas: Linha[]): DB {
-  const d = { config: [], solicitacoes_lgpd: [], validacoes_regras: [], alertas_leis: [], usuarios: [], veiculos: [], multas: [], defesas: [], fontes: [], planos: [], pedidos: [], carteira: [], parceiros: [], eventos_asaas: [], auditoria: [], trava: [], chat: [], jurimetria: [], resultados_orgao: [] } as unknown as Record<string, unknown[]>;
+  const d = { tokens: [], emails: [], config: [], solicitacoes_lgpd: [], validacoes_regras: [], alertas_leis: [], usuarios: [], veiculos: [], multas: [], defesas: [], fontes: [], planos: [], pedidos: [], carteira: [], parceiros: [], eventos_asaas: [], auditoria: [], trava: [], chat: [], jurimetria: [], resultados_orgao: [] } as unknown as Record<string, unknown[]>;
   for (const l of linhas) {
     if ((LISTAS_SEM_ID as readonly string[]).includes(l.colecao)) d[l.colecao] = l.data as unknown[];
     else (d[l.colecao] ??= []).push(l.data);

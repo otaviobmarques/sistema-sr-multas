@@ -10,6 +10,7 @@ import { GATEWAYS } from "@/lib/pagamentos/gateways";
 export async function POST(req: Request) {
   const u = await usuarioAtual(true);
   if (!u) return naoAutorizado();
+  if (u.email_confirmado === false) return NextResponse.json({ erro: "Confirme seu e-mail para comprar créditos (enviamos um link na sua caixa de entrada)." }, { status: 403 });
   const d = db();
   const cfg = lerConfig();
   const { plano_id, metodo, parcelas } = (await req.json()) as { plano_id: string; metodo: Metodo; parcelas?: number };

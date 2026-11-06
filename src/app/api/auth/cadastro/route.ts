@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { audit, carregar, db, rpcServidor, save, supabaseAtivo } from "@/lib/db";
 import { emailsAdmin, supabaseServidor } from "@/lib/session";
+import { criarToken, emailAtivo, Emails } from "@/lib/email";
 
 /** Cadastro: cria a conta no Supabase Auth (já confirmada) e o perfil do cliente. */
 export async function POST(req: Request) {
@@ -27,7 +28,9 @@ export async function POST(req: Request) {
   await carregar(true);
   const fmt = doc.length === 11 ? doc.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : doc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
   const perfil = emailsAdmin().includes(email) ? "admin" : doc.length === 14 ? "cliente_empresa" : "cliente";
-  db().usuarios.unshift({ id: uid, perfil, nome, cpf_cnpj: fmt, email, telefone: tel, criado_em: new Date().toISOString() });
+  const confirmar = emailAtivo() && perfil !== "admin";
+  db().usuarios.unshift({ id: uid, perfil, nome, cpf_cnpj: fmt, email, telefone: tel, email_confirmado: confirmar ? false : true, criado_em: new Date().toISOString() });
+  if (confirmar) await Emails.confirmar(db().usuarios[0], criarToken(uid, "email", 48 * 60));
   audit(uid, "cadastro", `usuario:${uid}`, "aceite dos termos de uso e da geração por IA");
   await save();
 

@@ -9,7 +9,7 @@ export default async function Conta() {
   const pedidos = db().solicitacoes_lgpd.filter((s) => s.usuario_id === u.id);
   const linhas: [string, string][] = [
     ["Nome", u.nome],
-    ["E-mail / usuário", u.email.endsWith("@senhormultas.interno") ? u.email.split("@")[0] : u.email],
+    ["E-mail / usuário", u.email.endsWith("@senhormultas.interno") ? u.email.split("@")[0] : `${u.email}${u.email_confirmado === false ? " (não confirmado)" : " ✓"}`],
     ["CPF / CNPJ", u.cpf_cnpj],
     ["Celular", u.telefone || "—"],
     ["Perfil", u.perfil === "admin" ? "Administrador" : u.perfil === "cliente_empresa" ? "Empresa" : "Cliente"],

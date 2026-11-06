@@ -35,7 +35,7 @@ export interface Usuario {
   email: string;
   telefone: string;
   parceiro_id?: string | null; // equipe do parceiro (perfil "parceiro")
-  indicado_por?: string | null; // cliente indicado por um parceiro (link de venda)
+  email_confirmado?: boolean | null; // false = aguardando confirmação (contas antigas: undefined = confirmado)
   asaas_customer_id?: string | null;
   criado_em: string;
 }
@@ -308,7 +308,30 @@ export interface SolicitacaoLGPD {
   concluida_em?: string | null;
 }
 
+/** Token de uso único enviado por e-mail (guardamos só o hash). */
+export interface TokenEmail {
+  id: string; // sha256 do token
+  usuario_id: string;
+  tipo: "senha" | "email";
+  expira_em: string;
+  usado_em?: string | null;
+  criado_em: string;
+}
+
+/** Registro de e-mails enviados (sem o conteúdo). */
+export interface EmailEnviado {
+  id: string;
+  usuario_id: string;
+  tipo: string;
+  referencia?: string | null; // ex.: defesa/pedido
+  status: "enviado" | "falhou" | "sem_configuracao";
+  detalhe?: string | null;
+  data: string;
+}
+
 export interface DB {
+  tokens: TokenEmail[];
+  emails: EmailEnviado[];
   config: Record<string, unknown>[];
   solicitacoes_lgpd: SolicitacaoLGPD[];
   validacoes_regras: ValidacaoRegra[];

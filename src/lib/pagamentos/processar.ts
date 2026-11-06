@@ -1,5 +1,6 @@
 import { audit, db, save, uid } from "../db";
 import type { EventoNormalizado } from "./gateways";
+import { Emails } from "../email";
 
 /**
  * Processa um evento de pagamento (de qualquer gateway) com IDEMPOTÊNCIA:
@@ -29,6 +30,8 @@ export async function processarEvento(ev: EventoNormalizado, gateway: string): P
           const plano = d.planos.find((p) => p.id === pedido.plano_id);
           d.carteira.unshift({ id: uid("cart"), usuario_id: pedido.usuario_id, pedido_id: pedido.id, quantidade: pedido.creditos, descricao: `Compra · ${plano?.nome ?? pedido.plano_id}`, validade: validade.toISOString(), data: new Date().toISOString() });
           audit(pedido.usuario_id, "pagamento_confirmado", `pedido:${pedido.id}`, `${gateway} · ${pedido.creditos} crédito(s) liberado(s)`);
+          const cliente = d.usuarios.find((x) => x.id === pedido.usuario_id);
+          if (cliente) await Emails.pagamentoConfirmado(cliente, plano?.nome ?? pedido.plano_id, pedido.creditos, pedido.id).catch(() => null);
           acao = "créditos liberados";
         } else acao = "já estava pago";
         break;

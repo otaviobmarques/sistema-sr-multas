@@ -47,6 +47,7 @@ export function AuthForm({ inicial = "entrar" }: { inicial?: "entrar" | "cadastr
           <input className="input" value={f.email} onChange={set("email")} type={modo === "entrar" ? "text" : "email"} autoComplete={modo === "entrar" ? "username" : "email"} autoCapitalize="none" required />
         </Campo>
         <Campo label="Senha"><input className="input" type="password" value={f.senha} onChange={set("senha")} autoComplete={modo === "entrar" ? "current-password" : "new-password"} minLength={modo === "cadastro" ? 10 : undefined} placeholder={modo === "cadastro" ? "10+ caracteres, com letras e números" : undefined} required /></Campo>
+        {modo === "entrar" && <a href="/recuperar" className="block text-right text-xs text-brand hover:underline">Esqueci minha senha</a>}
         {modo === "cadastro" && (
           <label className="flex items-start gap-2.5 text-xs text-ink-400">
             <input type="checkbox" className="mt-0.5 size-4 accent-amber-400" checked={f.aceite} onChange={set("aceite")} />

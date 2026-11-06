@@ -2,6 +2,7 @@ import { audit, db, saldo, save, uid } from "./db";
 import { auditar, classificarEscopo, estimar } from "./rules";
 import { gerarDefesa } from "./ai/pipeline";
 import { regrasAssinadas } from "./regras-validacao";
+import { Emails } from "./email";
 import type { Extracao } from "./ai/extractor";
 import type { Defesa, Multa, Usuario } from "./types";
 
@@ -140,6 +141,8 @@ export async function gerar(defesaId: string, usuarioId: string, ajuste?: string
   const caso = `#${defesa.id.slice(-4)}`;
   for (const e of r.eventos) d.trava.unshift({ id: uid("tr"), defesa_id: defesa.id, caso, acao: e.acao, motivo: e.motivo, data: new Date().toISOString() });
   audit(usuarioId, ajuste ? "ajuste_ia" : "defesa_gerada", `defesa:${defesa.id}`, `v${r.versao.versao} · ${r.modo}`);
+  const dono = d.usuarios.find((x) => x.id === usuarioId);
+  if (dono && !ajuste && r.versao.versao === 1) await Emails.defesaPronta(dono, defesa.id, multa.placa, multa.orgao, new Date(multa.prazo + "T12:00:00").toLocaleDateString("pt-BR")).catch(() => null);
   await save();
   return { precisaPagar: false as const, defesa };
 }
