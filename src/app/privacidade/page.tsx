@@ -33,7 +33,6 @@ export default function Privacidade() {
         <li><strong>Anthropic (IA Claude):</strong> processa a notificação e a redação da peça. Contrato sem uso dos dados para treinamento de modelos; enviamos apenas o necessário.</li>
         <li><strong>Asaas:</strong> instituição de pagamento autorizada pelo Banco Central, para cobranças e notas fiscais.</li>
         <li><strong>Supabase e Vercel:</strong> hospedagem do banco de dados (região São Paulo) e da aplicação.</li>
-        <li><strong>Parceiros (lojas, despachantes):</strong> apenas se você chegou pelo link deles, com o mínimo necessário para o repasse de comissão e o acompanhamento do seu caso. [Confirmar escopo com o jurídico.]</li>
         <li><strong>Órgãos de trânsito:</strong> somente quando você protocola a sua defesa.</li>
       </ul>
       <p>Alguns fornecedores podem processar dados fora do Brasil, com as garantias do art. 33 da LGPD. [Detalhar com o jurídico.] Não vendemos dados pessoais.</p>

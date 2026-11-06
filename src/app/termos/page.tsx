@@ -43,16 +43,13 @@ export default function Termos() {
       <h2>6. Cancelamento, arrependimento e reembolso</h2>
       <p>[A DEFINIR PELO JURÍDICO.] Sugestão de partida: direito de arrependimento em até 7 dias da compra para créditos não utilizados (Código de Defesa do Consumidor, art. 49); créditos já consumidos não são reembolsáveis, pois o serviço foi prestado; estornos e contestações removem os créditos ainda não usados.</p>
 
-      <h2>7. Parceiros</h2>
-      <p>Se você chegou por uma loja, despachante ou outro parceiro, ele pode receber comissão sobre a sua compra, separada automaticamente na própria cobrança. O preço para você é o mesmo.</p>
-
-      <h2>8. Uso aceitável</h2>
+      <h2>7. Uso aceitável</h2>
       <p>É proibido enviar documentos de terceiros sem autorização, tentar manipular a IA com instruções ocultas nos arquivos, usar a plataforma para fins ilícitos ou tentar acessar dados de outros usuários.</p>
 
-      <h2>9. Limitação de responsabilidade</h2>
+      <h2>8. Limitação de responsabilidade</h2>
       <p>[A DEFINIR PELO JURÍDICO.] Não respondemos pelo resultado do julgamento, por defesas não protocoladas no prazo ou por informações incorretas fornecidas pelo usuário, nos limites permitidos pelo Código de Defesa do Consumidor.</p>
 
-      <h2>10. Alterações e foro</h2>
+      <h2>9. Alterações e foro</h2>
       <p>Podemos atualizar estes Termos, avisando com antecedência pelos canais cadastrados. Fica eleito o foro do domicílio do consumidor. Dúvidas: <strong>[e-mail de atendimento]</strong>.</p>
     </Documento>
   );

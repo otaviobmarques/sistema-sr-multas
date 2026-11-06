@@ -34,7 +34,8 @@ export interface Usuario {
   cpf_cnpj: string;
   email: string;
   telefone: string;
-  parceiro_id?: string | null;
+  parceiro_id?: string | null; // equipe do parceiro (perfil "parceiro")
+  indicado_por?: string | null; // cliente indicado por um parceiro (link de venda)
   asaas_customer_id?: string | null;
   criado_em: string;
 }
@@ -70,7 +71,7 @@ export interface Multa {
   velocidade_limite?: number | null;
   equipamento_afericao?: string | null; // data da última aferição
   imagem_placa?: boolean | null; // notificação traz a imagem do veículo com a placa (medidor de velocidade)
-  origem: "upload" | "monitoramento" | "whatsapp";
+  origem: "upload" | "whatsapp";
   escopo: "automatizado" | "sinalizado";
   confianca: Record<string, number>; // confiança por campo da extração (0..1)
   arquivo_nome?: string | null;
@@ -195,6 +196,9 @@ export interface Pedido {
   gateway?: "asaas" | "mercadopago" | "stripe" | "simulado";
   ambiente?: "teste" | "producao";
   gateway_aux?: string | null; // ex.: payment_intent da Stripe
+  comissao_pct?: number | null; // % do parceiro no momento da venda
+  comissao_split?: boolean; // separada automaticamente na cobrança (Asaas)
+  comissao_repassada_em?: string | null; // repasse manual registrado pelo admin
   invoice_url?: string | null;
   pix_payload?: string | null;
   pix_qrcode_base64?: string | null;
@@ -221,8 +225,10 @@ export interface Parceiro {
   asaas_wallet_id?: string | null;
   slug_link: string;
   plano: string;
-  status: "ativo" | "onboarding" | "assinatura";
+  status: "ativo" | "onboarding" | "assinatura" | "inativo";
   white_label: boolean;
+  contato_email?: string | null;
+  criado_em?: string;
 }
 
 export interface EventoAsaas {

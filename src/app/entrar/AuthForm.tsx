@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Loader2, LogIn, UserPlus } from "lucide-react";
 
-export function AuthForm() {
+export function AuthForm({ inicial = "entrar" }: { inicial?: "entrar" | "cadastro" }) {
   const router = useRouter();
-  const [modo, setModo] = useState<"entrar" | "cadastro">("entrar");
+  const [modo, setModo] = useState<"entrar" | "cadastro">(inicial);
   const [f, setF] = useState({ nome: "", cpf_cnpj: "", telefone: "", email: "", senha: "", aceite: false });
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);

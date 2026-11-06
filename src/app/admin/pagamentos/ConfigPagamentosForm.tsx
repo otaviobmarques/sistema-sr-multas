@@ -12,7 +12,7 @@ type Campo = { chave: string; rotulo: string; publico?: boolean; ajuda: string }
 
 const NOMES: Record<G, string> = { asaas: "Asaas", mercadopago: "Mercado Pago", stripe: "Stripe" };
 const DESC: Record<G, string> = {
-  asaas: "Pix, boleto e cartão · split automático para parceiros · nota fiscal",
+  asaas: "Pix, boleto e cartão · nota fiscal",
   mercadopago: "Pix com QR na tela · cartão e boleto pelo Checkout Pro",
   stripe: "Cartão (com parcelas no Brasil), Pix e boleto pelo Stripe Checkout",
 };

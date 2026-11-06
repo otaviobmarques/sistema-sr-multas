@@ -6,8 +6,10 @@ import { AuthForm } from "./AuthForm";
 
 export const dynamic = "force-dynamic";
 
-export default function Entrar() {
+export default async function Entrar({ searchParams }: { searchParams: Promise<{ cadastro?: string }> }) {
   const real = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const { cadastro } = await searchParams;
+
   return (
     <div className="relative grid min-h-screen place-items-center px-4 py-10">
       <div className="pointer-events-none absolute inset-0 bg-grid [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
@@ -19,7 +21,7 @@ export default function Entrar() {
           <>
             <h1 className="mt-6 text-xl font-semibold text-white">Acesse sua conta</h1>
             <p className="mt-1 text-sm text-ink-400">Análise da multa grátis. Você só paga se gerar a defesa.</p>
-            <AuthForm />
+            <AuthForm inicial={cadastro ? "cadastro" : "entrar"} />
           </>
         ) : (
           <>

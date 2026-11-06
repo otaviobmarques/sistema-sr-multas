@@ -23,7 +23,7 @@ export default async function Financeiro() {
           <div className="divide-y divide-white/5 text-sm">
             {d.pedidos.map((p) => (
               <div key={p.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div><div className="font-mono text-xs text-ink-200">{p.id} ↔ {p.asaas_payment_id} <span className="text-ink-400">({p.gateway ?? "asaas"}{p.ambiente ? `/${p.ambiente}` : ""})</span></div><div className="text-xs text-ink-400">{d.usuarios.find((u) => u.id === p.usuario_id)?.nome} · {p.metodo}{p.parceiro_id ? ` · split ${d.parceiros.find((x) => x.id === p.parceiro_id)?.nome}` : ""}</div></div>
+                <div><div className="font-mono text-xs text-ink-200">{p.id} ↔ {p.asaas_payment_id} <span className="text-ink-400">({p.gateway ?? "asaas"}{p.ambiente ? `/${p.ambiente}` : ""})</span></div><div className="text-xs text-ink-400">{d.usuarios.find((u) => u.id === p.usuario_id)?.nome} · {p.metodo}</div></div>
                 <div className="flex items-center gap-2"><span className="font-mono text-ink-200">{brl(p.valor)}</span><Badge tone={p.status === "pago" ? "ok" : p.status === "aguardando_pagamento" ? "warn" : "bad"}>{p.status.replace("_", " ")}</Badge></div>
               </div>
             ))}

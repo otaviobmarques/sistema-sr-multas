@@ -23,7 +23,6 @@ const NAV = {
   admin: [
     { href: "/admin", label: "Visão geral", icon: Gauge },
     { href: "/admin/jurimetria", label: "Jurimetria", icon: Scale },
-    { href: "/admin/parceiros", label: "Parceiros (lojas)", icon: Handshake },
     { href: "/admin/financeiro", label: "Financeiro", icon: CreditCard },
     { href: "/admin/pagamentos", label: "Pagamentos (gateways)", icon: Settings2 },
     { href: "/admin/qualidade", label: "Auditoria IA", icon: ShieldCheck },

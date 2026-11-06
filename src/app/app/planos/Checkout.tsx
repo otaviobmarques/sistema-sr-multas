@@ -72,7 +72,7 @@ export function Checkout({ planos, defesaRetorno, demo, podeSimular = true, meto
             {p.destaque && <span className="absolute -top-2.5 left-6 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold text-[#1a1203]">Mais escolhido</span>}
             <div className="text-sm text-ink-300">{p.nome}</div>
             <div className="mt-2 text-3xl font-semibold tracking-tight text-white">{p.preco ? brl(p.preco) : "Sob consulta"}</div>
-            <div className="mt-1 text-xs text-ink-400">{p.preco && p.creditos ? `${brl(p.preco / p.creditos)} por defesa · ${p.validade_meses} meses` : "Frotas, lojas e parceiros"}</div>
+            <div className="mt-1 text-xs text-ink-400">{p.preco && p.creditos ? `${brl(p.preco / p.creditos)} por defesa · ${p.validade_meses} meses` : "Frotas e empresas"}</div>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-ink-300">
               {p.beneficios.map((b) => <li key={b} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-ok" />{b}</li>)}
             </ul>

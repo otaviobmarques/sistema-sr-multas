@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { db, saldo } from "@/lib/db";
 import { exigirUsuario } from "@/lib/session";
 import { Badge, PageHeader } from "@/components/ui";
@@ -9,14 +8,12 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
   const { defesa } = await searchParams;
   const u = await exigirUsuario();
   const d = db();
-  const ref = (await cookies()).get("sm_ref")?.value;
-  const parceiro = ref ? d.parceiros.find((p) => p.slug_link === ref) : undefined;
   return (
     <div>
       <PageHeader
         title="Planos e créditos"
         subtitle="1 crédito = 1 defesa completa (todas as fases daquela multa) · valores ilustrativos"
-        actions={<><Badge tone="ia">Saldo: {saldo(u.id)} crédito(s)</Badge>{parceiro && <Badge tone="brand">Indicação: {parceiro.nome}</Badge>}</>}
+        actions={<><Badge tone="ia">Saldo: {saldo(u.id)} crédito(s)</Badge></>}
       />
       <Checkout planos={d.planos} defesaRetorno={defesa ?? null} demo={!gatewayConfigurado()}
         metodos={metodosAtivos()}

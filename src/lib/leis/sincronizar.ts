@@ -28,7 +28,7 @@ export async function sincronizarLeis(opts: { limite?: number } = {}) {
   const ultimo = db().auditoria.find((a) => a.acao === "sync_leis")?.detalhe?.split(" ")[0];
   if (ultimo === commit) return { commit, mudancas: 0, mensagem: "Sem novidades no repositório" };
 
-  // arquivos monitorados e seus shas
+  // arquivos acompanhados e seus shas
   const arquivos: { path: string; sha: string }[] = [];
   const ctbDir = await gh<Item[]>(`contents/federal/leis-ordinarias/1997?ref=${commit}`);
   const ctb = ctbDir.find((i) => i.path === CTB);

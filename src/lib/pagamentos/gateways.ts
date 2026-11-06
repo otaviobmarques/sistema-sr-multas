@@ -14,7 +14,6 @@ export type CobrancaEntrada = {
   metodo: Metodo;
   parcelas: number;
   descricao: string;
-  split?: { walletId: string; percentual: number } | null;
   urlRetorno: string; // página para onde o cliente volta após pagar (Stripe/Mercado Pago)
   urlWebhook: string;
 };
@@ -58,7 +57,6 @@ export const Asaas: Gateway = {
       customer = c.id;
     }
     const corpo: Record<string, unknown> = { customer, billingType: e.metodo, dueDate: venc(), description: e.descricao, externalReference: e.pedidoId };
-    if (e.split) corpo.split = [{ walletId: e.split.walletId, percentualValue: e.split.percentual }];
     if (e.metodo === "CREDIT_CARD" && e.parcelas > 1) {
       corpo.installmentCount = e.parcelas;
       corpo.totalValue = e.valor;

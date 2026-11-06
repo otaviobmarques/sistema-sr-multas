@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { audit, db, save, uid } from "@/lib/db";
 import { naoAutorizado, usuarioAtual } from "@/lib/session";
@@ -18,8 +18,6 @@ export async function POST(req: Request) {
   if (!metodosAtivos().includes(metodo)) return NextResponse.json({ erro: "Forma de pagamento indisponível" }, { status: 400 });
   const nParcelas = metodo === "CREDIT_CARD" ? Math.min(Math.max(1, parcelas ?? 1), plano.id === "avulso" ? 1 : cfg.parcelas_max) : 1;
 
-  const ref = (await cookies()).get("sm_ref")?.value;
-  const parceiro = ref ? d.parceiros.find((p) => p.slug_link === ref && p.status === "ativo") : undefined;
   const h = await headers();
   const base = process.env.APP_URL && !process.env.APP_URL.includes("localhost") ? process.env.APP_URL : `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const pedidoId = uid("ped");
@@ -36,8 +34,6 @@ export async function POST(req: Request) {
           metodo,
           parcelas: nParcelas,
           descricao: `Senhor Multas · ${plano.nome}`,
-          // split automático só no Asaas (nos demais, a comissão fica registrada para repasse)
-          split: cfg.gateway === "asaas" && cfg.ambiente === "producao" && parceiro?.asaas_wallet_id && parceiro.comissao_pct ? { walletId: parceiro.asaas_wallet_id, percentual: parceiro.comissao_pct } : null,
           urlRetorno: `${base}/app/pagamentos?pedido=${pedidoId}`,
           urlWebhook: `${base}/api/webhooks/${cfg.gateway}`,
         },
@@ -55,7 +51,6 @@ export async function POST(req: Request) {
       creditos: plano.creditos,
       metodo,
       parcelas: nParcelas,
-      parceiro_id: parceiro?.id ?? null,
       status: "aguardando_pagamento",
       asaas_payment_id: cob.id,
       gateway: real ? cfg.gateway : "simulado",

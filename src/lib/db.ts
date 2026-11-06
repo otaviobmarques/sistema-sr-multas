@@ -119,7 +119,7 @@ function seed(): DB {
       { id: "avulso", nome: "Avulso", creditos: 1, preco: 79.9, validade_meses: 12, beneficios: ["Análise com IA", "Defesa Pronta validada", "Acompanhamento de prazos"], cobranca: "Pix, cartão ou boleto" },
       { id: "pack5", nome: "Até 5 defesas", creditos: 5, preco: 349, validade_meses: 12, destaque: true, beneficios: ["Tudo do Avulso", "Créditos válidos por 12 meses", "Vários veículos"], cobranca: "À vista ou parcelado no cartão" },
       { id: "pack20", nome: "20 defesas", creditos: 20, preco: 1190, validade_meses: 12, beneficios: ["Tudo do pacote 5", "Ideal para frotas", "Relatório de economia"], cobranca: "À vista ou parcelado no cartão" },
-      { id: "personalizado", nome: "Personalizado", creditos: null, preco: null, validade_meses: null, beneficios: ["Volume e preço negociados", "Assinatura mensal", "White-label para parceiros"], cobranca: "Assinatura recorrente ou por uso" },
+      { id: "personalizado", nome: "Personalizado", creditos: null, preco: null, validade_meses: null, beneficios: ["Volume e preço negociados", "Assinatura mensal", "Vários usuários e faturamento para CNPJ"], cobranca: "Assinatura recorrente ou por uso" },
     ],
     pedidos: [
       { id: "ped_1", usuario_id: DEMO_USER, plano_id: "pack5", valor: 349, creditos: 5, metodo: "PIX", status: "pago", asaas_payment_id: "pay_demo_001", criado_em: iso(-30), pago_em: iso(-30) },
@@ -129,13 +129,7 @@ function seed(): DB {
       { id: "cart_2", usuario_id: DEMO_USER, defesa_id: "def_2", quantidade: -1, descricao: "Defesa PBH/BHTrans · ABC1D23", data: iso(-14) },
       { id: "cart_3", usuario_id: DEMO_USER, defesa_id: "def_3", quantidade: -1, descricao: "Defesa PRF · QWE4R56", data: iso(-2) },
     ],
-    parceiros: [
-      { id: "par_1", nome: "Loja Contagem", tipo: "ECV", comissao_pct: 20, slug_link: "loja-contagem", plano: "Personalizado", status: "ativo", white_label: true, asaas_wallet_id: "wal_demo_1" },
-      { id: "par_2", nome: "Loja Betim", tipo: "ECV", comissao_pct: 20, slug_link: "loja-betim", plano: "Personalizado", status: "ativo", white_label: false, asaas_wallet_id: "wal_demo_2" },
-      { id: "par_3", nome: "Despachante Centro BH", tipo: "despachante", comissao_pct: 15, slug_link: "despachante-centro-bh", plano: "20 defesas", status: "ativo", white_label: false, asaas_wallet_id: "wal_demo_3" },
-      { id: "par_4", nome: "Frota Alfa Ltda", tipo: "frota", comissao_pct: 0, slug_link: "frota-alfa", plano: "Personalizado", status: "assinatura", white_label: false },
-      { id: "par_5", nome: "Loja Sete Lagoas", tipo: "ECV", comissao_pct: 20, slug_link: "loja-sete-lagoas", plano: "Personalizado", status: "onboarding", white_label: false },
-    ],
+    parceiros: [],
     eventos_asaas: [],
     auditoria: [],
     trava: [

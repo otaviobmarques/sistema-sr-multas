@@ -15,7 +15,6 @@ export const CAMPOS: Record<GatewayId, { chave: string; rotulo: string; publico?
   asaas: [
     { chave: "api_key", rotulo: "Chave de API (access_token)", ajuda: "Asaas → Integrações → Chaves de API. Sandbox começa com $aact_hmlg…; produção com $aact_prod…" },
     { chave: "webhook_token", rotulo: "Token do webhook", ajuda: "Você escolhe (use “Gerar”) e cola o mesmo valor no Asaas ao criar o webhook." },
-    { chave: "wallet_id", rotulo: "Wallet ID da sua conta (opcional)", publico: true, ajuda: "Só para conferência do split; não é obrigatório." },
   ],
   mercadopago: [
     { chave: "access_token", rotulo: "Access Token", ajuda: "Mercado Pago → Suas integrações → Credenciais. Teste: TEST-…; produção: APP_USR-…" },

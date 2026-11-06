@@ -24,7 +24,6 @@ export default function Home() {
           <a href="#seguranca" className="hover:text-white">Segurança</a>
           <a href="#planos" className="hover:text-white">Planos</a>
           <a href="#turma" className="hover:text-white">A turma</a>
-          <a href="#parceiros" className="hover:text-white">Parceiros</a>
         </nav>
         <EntrarBotoes compact />
       </header>
@@ -185,17 +184,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PARCEIROS */}
-      <section id="parceiros" className="relative z-10 mx-auto max-w-7xl px-5 py-20">
-        <div className="grid items-center gap-8 md:grid-cols-[auto_1fr_auto]">
-          <div className="grid size-16 place-items-center rounded-2xl bg-ia/10 ring-1 ring-ia/25"><Store className="size-7 text-ia" /></div>
-          <div>
-            <h3 className="text-2xl font-semibold text-white">ECVs, despachantes e lojas</h3>
-            <p className="mt-1 text-ink-400">Revenda com link próprio, white-label opcional e comissão automática pelo split do Asaas — sem conciliação manual.</p>
-          </div>
-          <Link href="/entrar" className="btn btn-ghost">Quero ser parceiro <ArrowRight className="size-4" /></Link>
-        </div>
-      </section>
 
       <section className="relative z-10 mx-auto max-w-7xl px-5 pb-20">
         <div className="panel flex flex-col items-center gap-6 p-10 text-center md:p-14">
