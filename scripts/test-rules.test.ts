@@ -51,3 +51,15 @@ test("identificação do titular por nome", () => {
   assert.ok(mesmo("MARINA DE OLIVEIRA SOUZA", "Marina Souza"));
   assert.ok(!mesmo("JOÃO PEREIRA LIMA", "Marina Souza"));
 });
+
+test("R07 prazo mínimo da defesa prévia (CTB art. 281-A)", () => {
+  assert.equal(r({ data_expedicao: "2026-09-20", prazo: "2026-10-25" }, "R07"), "ok");
+  assert.equal(r({ data_expedicao: "2026-09-20", prazo: "2026-10-05" }, "R07"), "possivel_nulidade");
+  assert.equal(r({ fase: "jari" }, "R07"), undefined);
+});
+test("R08 imagem com a placa (medidor de velocidade)", () => {
+  assert.equal(r({ imagem_placa: true }, "R08"), "ok");
+  assert.equal(r({ imagem_placa: false }, "R08"), "possivel_nulidade");
+  assert.equal(r({ imagem_placa: null }, "R08"), "nao_informado");
+  assert.equal(r({ tipo: "estacionamento" }, "R08"), undefined);
+});

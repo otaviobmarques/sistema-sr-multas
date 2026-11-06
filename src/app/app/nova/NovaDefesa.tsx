@@ -28,6 +28,7 @@ const CAMPOS: { k: keyof Multa; rotulo: string; tipo?: "text" | "date" | "dateti
   { k: "agente_ou_equipamento", rotulo: "Agente / equipamento" },
   { k: "marca_especie", rotulo: "Marca / espécie" },
   { k: "equipamento_afericao", rotulo: "Última aferição do equipamento", tipo: "date" },
+  { k: "imagem_placa", rotulo: "Notificação traz foto com a placa?", tipo: "select", opcoes: [["", "Não informado"], ["true", "Sim"], ["false", "Não"]] },
   { k: "velocidade_medida", rotulo: "Velocidade considerada (km/h)", tipo: "number" },
   { k: "velocidade_limite", rotulo: "Velocidade máxima (km/h)", tipo: "number" },
 ];
@@ -195,7 +196,7 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
         )}
         <CardTitle extra={<span className="text-[11px] text-ink-400">campos em <span className="text-warn">amarelo</span>: confiança baixa — confira</span>}>Dados extraídos (confira)</CardTitle>
         <div className="grid gap-3.5 sm:grid-cols-2">
-          {CAMPOS.filter((c) => !(multa.tipo !== "velocidade" && ["velocidade_medida", "velocidade_limite", "equipamento_afericao"].includes(c.k))).map((c) => {
+          {CAMPOS.filter((c) => !(multa.tipo !== "velocidade" && ["velocidade_medida", "velocidade_limite", "equipamento_afericao", "imagem_placa"].includes(c.k))).map((c) => {
             const conf = multa.confianca[c.k];
             const baixa = conf !== undefined && conf < 0.85;
             return (

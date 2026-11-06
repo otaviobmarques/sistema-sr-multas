@@ -2,6 +2,9 @@ import { exigirAdmin } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Badge, Card, CardTitle, PageHeader, Stat } from "@/components/ui";
 import { Amostra } from "./Amostra";
+import { listarNormas } from "@/lib/leis/base";
+import { situacaoDasRegras } from "@/lib/regras-validacao";
+import Link from "next/link";
 
 const ACAO = {
   citacao_removida: ["Citação removida", "bad"],
@@ -17,6 +20,11 @@ export default async function Qualidade() {
   const c = (a: string) => d.trava.filter((t) => t.acao === a).length;
   const geradas = d.defesas.filter((x) => x.versoes.length);
   const conservador = geradas.length ? Math.round((geradas.filter((x) => x.modo === "conservador").length / geradas.length) * 100) : 9;
+  const normas = await listarNormas();
+  const regras = await situacaoDasRegras();
+  const sync = d.auditoria.find((a) => a.acao === "sync_leis");
+  const alertas = d.alertas_leis.filter((a) => !a.resolvido);
+  const curPend = normas.filter((n) => n.origem === "curadoria" && !n.validada_em).length;
   const candidatas = geradas.map((x) => ({ id: x.id, caso: `#${x.id.slice(-4)}`, orgao: d.multas.find((m) => m.id === x.multa_id)?.orgao ?? "", modo: x.modo }));
   return (
     <div>
@@ -41,10 +49,17 @@ export default async function Qualidade() {
           </table>
         </Card>
         <Card>
-          <CardTitle>Base de leis · ctresb/leis</CardTitle>
+          <CardTitle extra={<Link href="/admin/fontes" className="text-xs text-brand">abrir</Link>}>Base de leis · ctresb/leis</CardTitle>
           <div className="divide-y divide-white/5 text-sm">
-            {[["Última sincronização", "hoje, 04:00"], ["Normas de trânsito indexadas", "CTB + resoluções CONTRAN"], ["Fontes nesta instalação", String(d.fontes.length)], ["Artigos alterados desde ontem", "0"], ["Regras afetadas por mudança", <Badge key="n" tone="ok">Nenhuma</Badge>], ["Conferência com normas.leg.br", <Badge key="a" tone="ok">Ativa</Badge>]].map(([k, v]) => (
-              <div key={String(k)} className="flex items-center justify-between py-2.5"><span className="text-ink-300">{k}</span><span className="text-ink-200">{v}</span></div>
+            {([
+              ["Última sincronização", sync ? `${new Date(sync.data).toLocaleString("pt-BR")} · ${sync.detalhe?.slice(0, 8)}` : "ainda não executada"],
+              ["Normas de trânsito indexadas", `${normas.length} (${normas.reduce((s, n) => s + n.trechos, 0).toLocaleString("pt-BR")} trechos)`],
+              ["Regras assinadas por especialista", <Badge key="r" tone={regras.every((r) => r.status === "assinada") ? "ok" : "warn"}>{regras.filter((r) => r.status === "assinada").length}/{regras.length}</Badge>],
+              ["Regras afetadas por mudança na lei", <Badge key="n" tone={alertas.length ? "bad" : "ok"}>{alertas.length ? `${alertas.length} alerta(s)` : "Nenhuma"}</Badge>],
+              ["Curadoria pendente de validação", <Badge key="c" tone={curPend ? "warn" : "ok"}>{curPend}</Badge>],
+              ["Conferência na citação", <Badge key="a" tone="ok">Hash + vigência na base</Badge>],
+            ] as [string, React.ReactNode][]).map(([k, v]) => (
+              <div key={k} className="flex items-center justify-between py-2.5"><span className="text-ink-300">{k}</span><span className="text-ink-200">{v}</span></div>
             ))}
           </div>
         </Card>

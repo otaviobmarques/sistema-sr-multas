@@ -6,7 +6,7 @@ import type { ChecagemRegra, Estimativa, Multa, TipoInfracao } from "./types";
  * (ver scripts/test-rules.ts). As regras abaixo são a versão inicial e devem ser revisadas
  * e assinadas por especialista em direito de trânsito antes da produção.
  */
-export const VERSAO_REGRAS = "regras-2026.11.0";
+export const VERSAO_REGRAS = "regras-2026.11.1";
 
 const DIA = 86_400_000;
 const dias = (a: string, b: string) => Math.floor((new Date(b).getTime() - new Date(a).getTime()) / DIA);
@@ -16,6 +16,8 @@ export const TIPOS_FORA_ESCOPO: TipoInfracao[] = ["suspensao", "cassacao"];
 type Regra = {
   codigo: string;
   titulo: string;
+  /** Descrição em linguagem simples do que a regra verifica (para revisão do especialista). */
+  logica: string;
   versao: string;
   normas: string[];
   aplica: (m: Multa) => boolean;
@@ -26,8 +28,9 @@ export const REGRAS: Regra[] = [
   {
     codigo: "R01",
     titulo: "Prazo de expedição da notificação",
-    versao: "1.0",
-    normas: ["ctb-281-pu-ii"],
+    logica: "Aplica-se à defesa prévia e à JARI. Calcula os dias entre a data da infração e a data de expedição da notificação de autuação. Mais de 30 dias: possível nulidade. Sem data de expedição: não informado.",
+    versao: "1.1",
+    normas: ["ctb-art281-par1", "ctb-art281-par1-inc2"],
     aplica: (m) => m.fase === "defesa_previa" || m.fase === "jari",
     checar: (m) => {
       if (!m.data_expedicao) return { resultado: "nao_informado", detalhe: "Data de expedição da notificação não identificada no documento." };
@@ -39,8 +42,9 @@ export const REGRAS: Regra[] = [
   {
     codigo: "R02",
     titulo: "Campos obrigatórios do auto",
-    versao: "1.0",
-    normas: ["ctb-280", "ctb-281-pu-i"],
+    logica: "Aplica-se a todas as infrações. Verifica se constam no auto: tipificação, local, data e hora, placa, marca/espécie do veículo e identificação do agente ou equipamento. Qualquer ausência: possível nulidade.",
+    versao: "1.1",
+    normas: ["ctb-art280-cpt", "ctb-art280-inc1", "ctb-art280-inc2", "ctb-art280-inc3", "ctb-art280-inc5", "ctb-art281-par1-inc1"],
     aplica: () => true,
     checar: (m) => {
       const faltando: string[] = [];
@@ -57,8 +61,9 @@ export const REGRAS: Regra[] = [
   {
     codigo: "R03",
     titulo: "Aferição do equipamento",
-    versao: "1.0",
-    normas: ["contran-798-2020", "dec-jari-mg-0412"],
+    logica: "Aplica-se a infrações de velocidade. Verifica a data da última verificação metrológica do medidor. Ausente: não informado (pede-se o certificado). Mais de 365 dias antes da infração: possível nulidade.",
+    versao: "1.1",
+    normas: ["ctb-art280-par2", "cur798-art4-inc1-ali3", "ctb-art281-par1-inc1"],
     aplica: (m) => m.tipo === "velocidade",
     checar: (m) => {
       if (!m.equipamento_afericao) return { resultado: "nao_informado", detalhe: "Data da verificação metrológica do equipamento não consta na notificação." };
@@ -70,8 +75,9 @@ export const REGRAS: Regra[] = [
   {
     codigo: "R04",
     titulo: "Competência do órgão",
-    versao: "1.0",
-    normas: ["ctb-281-pu-i"],
+    logica: "Aplica-se a todas. Sinaliza atenção quando a esfera do órgão não combina com o tipo de infração (ex.: estacionamento autuado por órgão federal; PRF fora da esfera federal).",
+    versao: "1.1",
+    normas: ["ctb-art281-cpt", "ctb-art280-inc5"],
     aplica: () => true,
     checar: (m) => {
       const municipais: TipoInfracao[] = ["estacionamento"];
@@ -85,8 +91,9 @@ export const REGRAS: Regra[] = [
   {
     codigo: "R05",
     titulo: "Descrição x enquadramento",
-    versao: "1.0",
-    normas: ["ctb-281-pu-i"],
+    logica: "Aplica-se a velocidade. Calcula o excesso (%) entre a velocidade considerada e a máxima, enquadra na faixa do art. 218 (até 20%, 20% a 50%, acima de 50%) e compara com o enquadramento da notificação. Divergência: possível nulidade.",
+    versao: "1.1",
+    normas: ["ctb-art218-cpt", "ctb-art218-inc1", "ctb-art218-inc2", "ctb-art218-inc3", "ctb-art281-par1-inc1"],
     aplica: (m) => m.tipo === "velocidade",
     checar: (m) => {
       if (!m.velocidade_medida || !m.velocidade_limite) return { resultado: "nao_informado", detalhe: "Velocidades medida/permitida não informadas." };
@@ -102,7 +109,8 @@ export const REGRAS: Regra[] = [
   {
     codigo: "R06",
     titulo: "Tempestividade da defesa",
-    versao: "1.0",
+    logica: "Controle interno de prazo: alerta quando faltam 5 dias ou menos para o prazo da fase, ou quando o prazo já venceu.",
+    versao: "1.1",
     normas: [],
     aplica: () => true,
     checar: (m, hoje) => {
@@ -113,6 +121,36 @@ export const REGRAS: Regra[] = [
     },
   },
 ];
+
+REGRAS.push(
+  {
+    codigo: "R07",
+    titulo: "Prazo mínimo para a defesa prévia",
+    logica: "Aplica-se à defesa prévia. Calcula os dias entre a expedição da notificação e o prazo dado para a defesa prévia. Menos de 30 dias: possível nulidade.",
+    versao: "1.0",
+    normas: ["ctb-art281a-cpt", "ctb-art281-par1-inc1"],
+    aplica: (m) => m.fase === "defesa_previa",
+    checar: (m) => {
+      if (!m.data_expedicao || !m.prazo) return { resultado: "nao_informado", detalhe: "Datas de expedição e/ou prazo da defesa não identificadas." };
+      const d = dias(m.data_expedicao, m.prazo);
+      if (d < 30) return { resultado: "possivel_nulidade", detalhe: `Prazo de defesa prévia de ${d} dias contados da expedição (mínimo legal de 30 dias).` };
+      return { resultado: "ok", detalhe: `Prazo de ${d} dias desde a expedição, dentro do mínimo legal.` };
+    },
+  },
+  {
+    codigo: "R08",
+    titulo: "Imagem com a placa na notificação",
+    logica: "Aplica-se a velocidade. Verifica se a notificação traz a imagem do veículo com a placa. Não traz: possível nulidade. Não foi possível verificar: não informado.",
+    versao: "1.0",
+    normas: ["cur798-art9-cpt", "ctb-art281-par1-inc1"],
+    aplica: (m) => m.tipo === "velocidade",
+    checar: (m) => {
+      if (m.imagem_placa === true) return { resultado: "ok", detalhe: "A notificação traz a imagem do veículo com a placa." };
+      if (m.imagem_placa === false) return { resultado: "possivel_nulidade", detalhe: "A notificação de infração por medidor de velocidade não traz a imagem com a placa do veículo." };
+      return { resultado: "nao_informado", detalhe: "Não foi possível verificar se a notificação traz a imagem com a placa." };
+    },
+  },
+);
 
 export function auditar(m: Multa, hoje = new Date().toISOString()): ChecagemRegra[] {
   return REGRAS.filter((r) => r.aplica(m)).map((r) => ({

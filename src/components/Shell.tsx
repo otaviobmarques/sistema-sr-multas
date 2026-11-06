@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import clsx from "clsx";
 import {
-  BadgeCheck, Bot, Car, CreditCard, FileStack, Gauge, Handshake, LayoutDashboard, Layers, LogOut, Menu, Scale, ShieldCheck, Upload, Wallet, X, Library, RotateCcw,
+  BadgeCheck, Bot, ListChecks, Car, CreditCard, FileStack, Gauge, Handshake, LayoutDashboard, Layers, LogOut, Menu, Scale, ShieldCheck, Upload, Wallet, X, Library, RotateCcw,
 } from "lucide-react";
 import { Logo } from "./ui";
 
@@ -25,6 +25,7 @@ const NAV = {
     { href: "/admin/parceiros", label: "Parceiros (lojas)", icon: Handshake },
     { href: "/admin/financeiro", label: "Financeiro (Asaas)", icon: CreditCard },
     { href: "/admin/qualidade", label: "Auditoria IA", icon: ShieldCheck },
+    { href: "/admin/regras", label: "Regras do motor", icon: ListChecks },
     { href: "/admin/fontes", label: "Base de leis", icon: Library },
   ],
 };

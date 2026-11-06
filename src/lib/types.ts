@@ -69,6 +69,7 @@ export interface Multa {
   velocidade_medida?: number | null;
   velocidade_limite?: number | null;
   equipamento_afericao?: string | null; // data da última aferição
+  imagem_placa?: boolean | null; // notificação traz a imagem do veículo com a placa (medidor de velocidade)
   origem: "upload" | "monitoramento" | "whatsapp";
   escopo: "automatizado" | "sinalizado";
   confianca: Record<string, number>; // confiança por campo da extração (0..1)
@@ -261,7 +262,33 @@ export interface MensagemChat {
   data: string;
 }
 
+/** Assinatura do especialista em direito de trânsito sobre uma regra do motor (cap. 6.2 / 15). */
+export interface ValidacaoRegra {
+  id: string; // codigo@versao
+  codigo: string;
+  versao: string;
+  especialista: string;
+  oab: string;
+  usuario_id: string;
+  hash_fontes: string; // hash dos dispositivos legais no momento da assinatura
+  observacoes?: string | null;
+  data: string;
+}
+
+/** Alerta da sincronização diária: dispositivo usado por regra mudou na base. */
+export interface AlertaLei {
+  id: string;
+  data: string;
+  commit: string;
+  norma_id: string;
+  trechos_alterados: string[];
+  regras_afetadas: string[];
+  resolvido: boolean;
+}
+
 export interface DB {
+  validacoes_regras: ValidacaoRegra[];
+  alertas_leis: AlertaLei[];
   usuarios: Usuario[];
   veiculos: Veiculo[];
   multas: Multa[];

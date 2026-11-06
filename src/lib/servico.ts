@@ -1,6 +1,7 @@
 import { audit, db, saldo, save, uid } from "./db";
 import { auditar, classificarEscopo, estimar } from "./rules";
 import { gerarDefesa } from "./ai/pipeline";
+import { regrasAssinadas } from "./regras-validacao";
 import type { Extracao } from "./ai/extractor";
 import type { Defesa, Multa, Usuario } from "./types";
 
@@ -54,6 +55,7 @@ function multaBase(e: Extracao, dono_id: string, arquivo_nome: string, origem: M
     velocidade_medida: e.velocidade_medida.valor,
     velocidade_limite: e.velocidade_limite.valor,
     equipamento_afericao: e.equipamento_afericao.valor,
+    imagem_placa: e.imagem_placa.valor,
     origem,
     escopo: "automatizado",
     confianca,
@@ -127,7 +129,8 @@ export async function gerar(defesaId: string, usuarioId: string, ajuste?: string
 
   defesa.status = "em_preparacao";
   const t0 = Date.now();
-  const r = await gerarDefesa(defesa, multa, d.fontes, { ajuste });
+  const regrasValidas = process.env.SM_EXIGIR_REGRAS_ASSINADAS === "1" ? await regrasAssinadas() : null;
+  const r = await gerarDefesa(defesa, multa, { ajuste, regrasValidas });
   defesa.versoes.push(r.versao);
   defesa.modo = r.modo;
   defesa.status = "aguardando_validacao";

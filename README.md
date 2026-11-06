@@ -11,6 +11,17 @@ Plataforma de defesa de multas com IA: o cliente envia a notificação, o sistem
 - **Pagamento:** sem `ASAAS_API_KEY`, só administradores podem simular pagamentos (`SM_DEMO_PAGAMENTO=1` libera para todos, apenas em testes).
 - **Novo segredo de servidor:** gere um valor aleatório, cadastre na Vercel e insira o SHA-256 dele em `sm_config` (chave `segredo_hash_<nome>`).
 
+## Base de leis (cap. 6)
+
+- **Origem:** repositório [ctresb/leis](https://github.com/ctresb/leis) — CTB (Lei 9.503/1997, texto compilado) e todas as resoluções/deliberações do CONTRAN presentes (238 normas, ~10,4 mil trechos).
+- **Estrutura:** cada norma quebrada em artigo, caput, parágrafo, inciso e alínea (`src/lib/leis/parser.ts`), com URN, hash, notas de redação e marcação de revogados/vetados. Tabelas `normas` e `normas_trechos` no Supabase, com busca em português.
+- **Importação inicial:** `node --env-file=.env.local --experimental-strip-types scripts/importar-leis.ts ../leis` (instruções no topo do script).
+- **Sincronização diária:** Vercel Cron às 04:00 (Brasília) chama `/api/cron/leis` (exige `CRON_SECRET`). Reimporta só arquivos alterados e, se um dispositivo usado por regra mudar, gera alerta e a assinatura da regra deixa de valer.
+- **Curadoria própria:** lacunas do repositório (`src/lib/leis/curadoria.ts`). Ex.: Res. CONTRAN 798/2020 (o repositório só tem o Anexo II) — trechos transcritos da Res. 804/2020. **Não podem ser citados até um especialista validar** em Admin → Base de leis.
+- **Regras do motor:** ligadas a dispositivos reais (`src/lib/rules.ts`). Em Admin → Regras do motor, o especialista revisa a lógica e os textos e assina (nome + OAB). Com `SM_EXIGIR_REGRAS_ASSINADAS=1`, só regras assinadas viram argumento.
+- **Trava automática:** cada citação precisa vir do pesquisador, existir na base com o mesmo hash, estar vigente e, se for curadoria, validada. Caso contrário o parágrafo sai da peça.
+- **Pendente:** conferência ao vivo com normas.leg.br (API pública não documentada); busca semântica (pgvector) — hoje busca textual em português.
+
 ## Rodar
 
 ```bash
