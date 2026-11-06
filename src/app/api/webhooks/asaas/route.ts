@@ -1,13 +1,8 @@
-import { NextResponse } from "next/server";
-import { webhookAutorizado } from "@/lib/asaas";
-import { processarEventoAsaas } from "@/lib/pagamentos";
-import { carregar } from "@/lib/db";
+import { receberWebhook } from "@/lib/pagamentos/webhook";
 
-/** Webhook do Asaas: valida token, grava com idempotência e responde rápido. */
+export const runtime = "nodejs";
+
+/** Webhook asaas: URL a cadastrar no painel do gateway (Admin → Pagamentos mostra a URL e as instruções). */
 export async function POST(req: Request) {
-  if (!webhookAutorizado(req.headers.get("asaas-access-token"))) return NextResponse.json({ erro: "não autorizado" }, { status: 401 });
-  const ev = await req.json().catch(() => null);
-  if (!ev?.event) return NextResponse.json({ erro: "payload inválido" }, { status: 400 });
-  await carregar(true);
-  return NextResponse.json(await processarEventoAsaas(ev));
+  return receberWebhook("asaas", req);
 }

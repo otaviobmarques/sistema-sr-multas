@@ -3,6 +3,7 @@ import { db, saldo } from "@/lib/db";
 import { exigirUsuario } from "@/lib/session";
 import { Badge, PageHeader } from "@/components/ui";
 import { Checkout } from "./Checkout";
+import { gatewayConfigurado, lerConfig, metodosAtivos, nomeGateway } from "@/lib/pagamentos/config";
 
 export default async function Planos({ searchParams }: { searchParams: Promise<{ defesa?: string }> }) {
   const { defesa } = await searchParams;
@@ -17,7 +18,10 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
         subtitle="1 crédito = 1 defesa completa (todas as fases daquela multa) · valores ilustrativos"
         actions={<><Badge tone="ia">Saldo: {saldo(u.id)} crédito(s)</Badge>{parceiro && <Badge tone="brand">Indicação: {parceiro.nome}</Badge>}</>}
       />
-      <Checkout planos={d.planos} defesaRetorno={defesa ?? null} demo={!process.env.ASAAS_API_KEY}
+      <Checkout planos={d.planos} defesaRetorno={defesa ?? null} demo={!gatewayConfigurado()}
+        metodos={metodosAtivos()}
+        parcelasMax={lerConfig().parcelas_max}
+        gatewayNome={gatewayConfigurado() ? nomeGateway(lerConfig().gateway) : "Simulado"}
         podeSimular={!process.env.NEXT_PUBLIC_SUPABASE_URL || u.perfil === "admin" || process.env.SM_DEMO_PAGAMENTO === "1"} />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Barcode, Check, CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, Lock, QrCode, Zap } from "lucide-react";
@@ -13,10 +13,11 @@ const METODOS = [
   { k: "BOLETO", t: "Boleto", i: Barcode },
 ] as const;
 
-export function Checkout({ planos, defesaRetorno, demo, podeSimular = true }: { planos: Plano[]; defesaRetorno: string | null; demo: boolean; podeSimular?: boolean }) {
+export function Checkout({ planos, defesaRetorno, demo, podeSimular = true, metodos = ["PIX", "CREDIT_CARD", "BOLETO"], parcelasMax = 6, gatewayNome = "Asaas" }: { planos: Plano[]; defesaRetorno: string | null; demo: boolean; podeSimular?: boolean; metodos?: string[]; parcelasMax?: number; gatewayNome?: string }) {
   const router = useRouter();
   const [sel, setSel] = useState("pack5");
-  const [metodo, setMetodo] = useState<(typeof METODOS)[number]["k"]>("PIX");
+  const disponiveis = METODOS.filter((m) => metodos.includes(m.k));
+  const [metodo, setMetodo] = useState<(typeof METODOS)[number]["k"]>(disponiveis[0]?.k ?? "PIX");
   const [parcelas, setParcelas] = useState(3);
   const [carregando, setCarregando] = useState(false);
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -24,6 +25,19 @@ export function Checkout({ planos, defesaRetorno, demo, podeSimular = true }: { 
   const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const plano = planos.find((p) => p.id === sel)!;
+
+  // Aguarda a confirmação do gateway (webhook) consultando o pedido
+  useEffect(() => {
+    if (!pedido || pago || demo) return;
+    const t = setInterval(async () => {
+      const r = await fetch(`/api/pedidos/${pedido.id}`).then((r) => r.json()).catch(() => null);
+      if (r?.status === "pago") {
+        setPago(true);
+        router.refresh();
+      }
+    }, 4000);
+    return () => clearInterval(t);
+  }, [pedido, pago, demo, router]);
 
   async function pagar() {
     setErro(null);
@@ -75,22 +89,23 @@ export function Checkout({ planos, defesaRetorno, demo, podeSimular = true }: { 
         {!pedido ? (
           <div className="flex flex-wrap items-center gap-5">
             <div className="mr-auto">
-              <div className="flex items-center gap-1.5 text-xs text-ink-400"><Lock className="size-3.5" /> Pagamento seguro via Asaas{demo && " · modo demonstração"}</div>
+              <div className="flex items-center gap-1.5 text-xs text-ink-400"><Lock className="size-3.5" /> Pagamento seguro via {gatewayNome}{demo && " · modo demonstração"}</div>
               <div className="mt-1 font-semibold text-white">{plano.nome} · {brl(plano.preco ?? 0)}</div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {METODOS.map(({ k, t, i: I }) => (
+              {disponiveis.length === 0 && <span className="text-sm text-warn">Nenhuma forma de pagamento ativa.</span>}
+              {disponiveis.map(({ k, t, i: I }) => (
                 <button key={k} onClick={() => setMetodo(k)} className={clsx("btn !py-2", metodo === k ? "bg-ok/10 text-ok ring-1 ring-ok/40" : "btn-ghost")}>
                   <I className="size-4" /> {t}
                 </button>
               ))}
               {metodo === "CREDIT_CARD" && plano.id !== "avulso" && (
                 <select className="input !w-auto" value={parcelas} onChange={(e) => setParcelas(Number(e.target.value))}>
-                  {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n} className="bg-ink-900">{n}x de {brl((plano.preco ?? 0) / n)}</option>)}
+                  {Array.from({ length: parcelasMax }, (_, i) => i + 1).map((n) => <option key={n} value={n} className="bg-ink-900">{n}x de {brl((plano.preco ?? 0) / n)}</option>)}
                 </select>
               )}
             </div>
-            <button onClick={pagar} disabled={carregando} className="btn btn-primary !px-6 !py-3">{carregando ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />} Pagar agora</button>
+            <button onClick={pagar} disabled={carregando || !disponiveis.length} className="btn btn-primary !px-6 !py-3">{carregando ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />} Pagar agora</button>
           </div>
         ) : pago ? (
           <div className="flex flex-wrap items-center gap-4">
@@ -130,11 +145,11 @@ export function Checkout({ planos, defesaRetorno, demo, podeSimular = true }: { 
                 </div>
               )}
               <div className="mt-4 flex flex-wrap gap-2">
-                {pedido.invoice_url && <a href={pedido.invoice_url} target="_blank" className="btn btn-ghost"><ExternalLink className="size-4" /> Abrir fatura Asaas</a>}
+                {pedido.invoice_url && <a href={pedido.invoice_url} target="_blank" className={pedido.pix_payload ? "btn btn-ghost" : "btn btn-primary"}><ExternalLink className="size-4" /> {pedido.pix_payload ? "Abrir fatura" : pedido.metodo === "BOLETO" ? "Abrir boleto" : "Ir para o pagamento"}</a>}
                 {demo && !podeSimular && <p className="text-xs text-warn">Pagamentos online serão ativados em breve. Fale com o atendimento para liberar créditos.</p>}
                 {demo && podeSimular && <button onClick={simular} disabled={carregando} className="btn btn-ok">{carregando ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />} Simular pagamento (webhook)</button>}
               </div>
-              <p className="mt-3 text-[11px] text-ink-400">Os créditos são liberados automaticamente quando o Asaas confirma o pagamento pelo webhook.</p>
+              <p className="mt-3 flex items-center gap-2 text-[11px] text-ink-400">{!demo && <Loader2 className="size-3 animate-spin" />} Os créditos são liberados automaticamente quando o {gatewayNome} confirma o pagamento — esta tela atualiza sozinha.</p>
             </div>
           </div>
         )}

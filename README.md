@@ -8,7 +8,10 @@ Plataforma de defesa de multas com IA: o cliente envia a notificação, o sistem
 - **Banco e login:** Supabase `senhor-multas` (`sa-east-1`) — tabela `sm_registros` + Supabase Auth
 - **Deploy automático:** todo push na branch `main` deste repositório publica uma nova versão.
 - **Variáveis na Vercel:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SM_SERVER_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_EMAILS`, `ASAAS_ENV`, `ASAAS_WEBHOOK_TOKEN` (e `ASAAS_API_KEY` quando o Asaas for ativado).
-- **Pagamento:** sem `ASAAS_API_KEY`, só administradores podem simular pagamentos (`SM_DEMO_PAGAMENTO=1` libera para todos, apenas em testes).
+- **Pagamentos (Admin → Pagamentos):** gateway ativo (Asaas, Mercado Pago ou Stripe), seletor Teste/Produção, formas de pagamento (Pix, cartão com limite de parcelas, boleto), credenciais por gateway e ambiente (criptografadas com `SM_CONFIG_KEY`) e URLs/instruções de webhook:
+  - `/api/webhooks/asaas` (header `asaas-access-token`) · `/api/webhooks/mercadopago` (header `x-signature`, HMAC) · `/api/webhooks/stripe` (header `Stripe-Signature`, HMAC).
+  - Sem credencial no gateway/ambiente ativo, o checkout fica simulado e só administradores podem simular (`SM_DEMO_PAGAMENTO=1` libera para todos, apenas em testes).
+  - Split automático de parceiros só no Asaas; nos demais a comissão fica registrada para repasse.
 - **Novo segredo de servidor:** gere um valor aleatório, cadastre na Vercel e insira o SHA-256 dele em `sm_config` (chave `segredo_hash_<nome>`).
 
 ## Base de leis (cap. 6)

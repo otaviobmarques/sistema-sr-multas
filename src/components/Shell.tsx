@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import clsx from "clsx";
 import {
-  BadgeCheck, Bot, ListChecks, UserRound, Car, CreditCard, FileStack, Gauge, Handshake, LayoutDashboard, Layers, LogOut, Menu, Scale, ShieldCheck, Upload, Wallet, X, Library, RotateCcw,
+  BadgeCheck, Bot, ListChecks, UserRound, Settings2, Car, CreditCard, FileStack, Gauge, Handshake, LayoutDashboard, Layers, LogOut, Menu, Scale, ShieldCheck, Upload, Wallet, X, Library, RotateCcw,
 } from "lucide-react";
 import { Logo } from "./ui";
 
@@ -24,14 +24,15 @@ const NAV = {
     { href: "/admin", label: "Visão geral", icon: Gauge },
     { href: "/admin/jurimetria", label: "Jurimetria", icon: Scale },
     { href: "/admin/parceiros", label: "Parceiros (lojas)", icon: Handshake },
-    { href: "/admin/financeiro", label: "Financeiro (Asaas)", icon: CreditCard },
+    { href: "/admin/financeiro", label: "Financeiro", icon: CreditCard },
+    { href: "/admin/pagamentos", label: "Pagamentos (gateways)", icon: Settings2 },
     { href: "/admin/qualidade", label: "Auditoria IA", icon: ShieldCheck },
     { href: "/admin/regras", label: "Regras do motor", icon: ListChecks },
     { href: "/admin/fontes", label: "Base de leis", icon: Library },
   ],
 };
 
-export function Shell({ area, user, saldo, modoDemo, podeAdmin = false, real = false, children }: { area: "cliente" | "admin"; user: { nome: string; perfil: string }; saldo?: number; modoDemo: { ia: boolean; asaas: boolean }; podeAdmin?: boolean; real?: boolean; children: React.ReactNode }) {
+export function Shell({ area, user, saldo, modoDemo, podeAdmin = false, real = false, children }: { area: "cliente" | "admin"; user: { nome: string; perfil: string }; saldo?: number; modoDemo: { ia: boolean; pagamento: string; pagamentoReal: boolean }; podeAdmin?: boolean; real?: boolean; children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -145,8 +146,8 @@ export function Shell({ area, user, saldo, modoDemo, podeAdmin = false, real = f
             <span className={clsx("flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset", modoDemo.ia ? "bg-ia/10 text-ia ring-ia/25" : "bg-white/5 text-ink-300 ring-white/10")}>
               <span className="size-1.5 rounded-full bg-current pulse-dot" /> IA {modoDemo.ia ? "Claude ativa" : "modo demonstração"}
             </span>
-            <span className={clsx("hidden items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset sm:flex", modoDemo.asaas ? "bg-ok/10 text-ok ring-ok/25" : "bg-white/5 text-ink-300 ring-white/10")}>
-              Asaas {modoDemo.asaas ? (process.env.NEXT_PUBLIC_ASAAS_ENV ?? "conectado") : "simulado"}
+            <span className={clsx("hidden items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset sm:flex", modoDemo.pagamentoReal ? "bg-ok/10 text-ok ring-ok/25" : "bg-white/5 text-ink-300 ring-white/10")}>
+              {modoDemo.pagamento}
             </span>
           </div>
         </header>

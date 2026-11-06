@@ -191,7 +191,10 @@ export interface Pedido {
   parcelas?: number;
   parceiro_id?: string | null;
   status: "aguardando_pagamento" | "pago" | "vencido" | "estornado" | "em_analise";
-  asaas_payment_id: string;
+  asaas_payment_id: string; // id da cobrança no gateway (nome mantido por compatibilidade)
+  gateway?: "asaas" | "mercadopago" | "stripe" | "simulado";
+  ambiente?: "teste" | "producao";
+  gateway_aux?: string | null; // ex.: payment_intent da Stripe
   invoice_url?: string | null;
   pix_payload?: string | null;
   pix_qrcode_base64?: string | null;
@@ -300,6 +303,7 @@ export interface SolicitacaoLGPD {
 }
 
 export interface DB {
+  config: Record<string, unknown>[];
   solicitacoes_lgpd: SolicitacaoLGPD[];
   validacoes_regras: ValidacaoRegra[];
   alertas_leis: AlertaLei[];

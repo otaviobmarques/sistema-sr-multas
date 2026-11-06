@@ -1,36 +1,52 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { randomUUID } from "crypto";
 import { audit, db, save, uid } from "@/lib/db";
-import { asaasAtivo, criarCobranca, garantirCliente } from "@/lib/asaas";
 import { naoAutorizado, usuarioAtual } from "@/lib/session";
+import { gatewayConfigurado, lerConfig, metodosAtivos, type Metodo } from "@/lib/pagamentos/config";
+import { GATEWAYS } from "@/lib/pagamentos/gateways";
 
-/** Etapa 6 / cap. 8.2: cria (ou reutiliza) o cliente no Asaas e a cobrança, com split se houver parceiro. */
+/** Cria o pedido e a cobrança no gateway ativo (Asaas, Mercado Pago ou Stripe), no ambiente configurado. */
 export async function POST(req: Request) {
   const u = await usuarioAtual(true);
   if (!u) return naoAutorizado();
   const d = db();
-  const { plano_id, metodo, parcelas } = (await req.json()) as { plano_id: string; metodo: "PIX" | "CREDIT_CARD" | "BOLETO"; parcelas?: number };
+  const cfg = lerConfig();
+  const { plano_id, metodo, parcelas } = (await req.json()) as { plano_id: string; metodo: Metodo; parcelas?: number };
   const plano = d.planos.find((p) => p.id === plano_id);
   if (!plano || !plano.preco || !plano.creditos) return NextResponse.json({ erro: "Plano indisponível para compra direta" }, { status: 400 });
-  if (!["PIX", "CREDIT_CARD", "BOLETO"].includes(metodo)) return NextResponse.json({ erro: "Método inválido" }, { status: 400 });
-  const nParcelas = metodo === "CREDIT_CARD" ? Math.min(Math.max(1, parcelas ?? 1), plano.id === "avulso" ? 1 : 6) : 1;
+  if (!metodosAtivos().includes(metodo)) return NextResponse.json({ erro: "Forma de pagamento indisponível" }, { status: 400 });
+  const nParcelas = metodo === "CREDIT_CARD" ? Math.min(Math.max(1, parcelas ?? 1), plano.id === "avulso" ? 1 : cfg.parcelas_max) : 1;
 
   const ref = (await cookies()).get("sm_ref")?.value;
   const parceiro = ref ? d.parceiros.find((p) => p.slug_link === ref && p.status === "ativo") : undefined;
+  const h = await headers();
+  const base = process.env.APP_URL && !process.env.APP_URL.includes("localhost") ? process.env.APP_URL : `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const pedidoId = uid("ped");
+  const real = gatewayConfigurado();
 
   try {
-    const customer = await garantirCliente(u);
-    u.asaas_customer_id = customer;
-    const pedidoId = uid("ped");
-    const cob = await criarCobranca({
-      customer,
-      valor: plano.preco,
-      metodo,
-      parcelas: nParcelas,
-      descricao: `Senhor Multas · ${plano.nome}`,
-      externalReference: pedidoId,
-      split: parceiro?.asaas_wallet_id && parceiro.comissao_pct ? [{ walletId: parceiro.asaas_wallet_id, percentualValue: parceiro.comissao_pct }] : undefined,
-    });
+    let cob: { id: string; url_pagamento: string | null; pix_payload?: string | null; pix_qr_base64?: string | null; cliente_gateway_id?: string | null };
+    if (real) {
+      cob = await GATEWAYS[cfg.gateway].criarCobranca(
+        {
+          pedidoId,
+          cliente: u,
+          valor: plano.preco,
+          metodo,
+          parcelas: nParcelas,
+          descricao: `Senhor Multas · ${plano.nome}`,
+          // split automático só no Asaas (nos demais, a comissão fica registrada para repasse)
+          split: cfg.gateway === "asaas" && cfg.ambiente === "producao" && parceiro?.asaas_wallet_id && parceiro.comissao_pct ? { walletId: parceiro.asaas_wallet_id, percentual: parceiro.comissao_pct } : null,
+          urlRetorno: `${base}/app/pagamentos?pedido=${pedidoId}`,
+          urlWebhook: `${base}/api/webhooks/${cfg.gateway}`,
+        },
+        cfg.ambiente,
+      );
+      if (cfg.gateway === "asaas" && cob.cliente_gateway_id) u.asaas_customer_id = cob.cliente_gateway_id;
+    } else {
+      cob = { id: `sim_${randomUUID().slice(0, 8)}`, url_pagamento: null, pix_payload: metodo === "PIX" ? `00020126580014br.gov.bcb.pix0136simulado-${pedidoId}5204000053039865406${plano.preco.toFixed(2)}5802BR6304SIMU` : null };
+    }
     d.pedidos.unshift({
       id: pedidoId,
       usuario_id: u.id,
@@ -42,15 +58,17 @@ export async function POST(req: Request) {
       parceiro_id: parceiro?.id ?? null,
       status: "aguardando_pagamento",
       asaas_payment_id: cob.id,
-      invoice_url: cob.invoiceUrl,
-      pix_payload: cob.pixPayload ?? null,
-      pix_qrcode_base64: cob.pixQr ?? null,
+      gateway: real ? cfg.gateway : "simulado",
+      ambiente: cfg.ambiente,
+      invoice_url: cob.url_pagamento,
+      pix_payload: cob.pix_payload ?? null,
+      pix_qrcode_base64: cob.pix_qr_base64 ?? null,
       criado_em: new Date().toISOString(),
     });
-    audit(u.id, "cobranca_criada", `pedido:${pedidoId}`, `${plano.nome} · ${metodo}`);
+    audit(u.id, "cobranca_criada", `pedido:${pedidoId}`, `${plano.nome} · ${metodo} · ${real ? `${cfg.gateway}/${cfg.ambiente}` : "simulado"}`);
     await save();
-    return NextResponse.json({ pedido: d.pedidos[0], demo: !asaasAtivo() });
+    return NextResponse.json({ pedido: d.pedidos[0], demo: !real, gateway: real ? GATEWAYS[cfg.gateway].nome : "Simulado" });
   } catch (e) {
-    return NextResponse.json({ erro: (e as Error).message }, { status: 502 });
+    return NextResponse.json({ erro: `Não foi possível criar a cobrança: ${(e as Error).message}` }, { status: 502 });
   }
 }
