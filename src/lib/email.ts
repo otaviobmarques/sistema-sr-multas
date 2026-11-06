@@ -111,6 +111,12 @@ export const Emails = {
       paragrafos: [`A defesa da multa da placa <b>${esc(placa)}</b> (${esc(orgao)}) foi gerada e passou pela verificação automática das citações.`, `Agora é com você: <b>confira os fatos destacados</b>, peça ajustes se precisar e assine. Prazo para protocolar: <b>${esc(prazo)}</b>.`],
       botao: { texto: "Conferir e assinar", url: `${urlBase()}/app/defesas/${defesaId}` },
     }, defesaId),
+  defesaAssinada: (u: Usuario, defesaId: string, protocolo: string, placa: string, orgao: string) =>
+    enviarEmail(u, "defesa_assinada", `Defesa assinada · Protocolo ${protocolo}`, {
+      titulo: "Defesa assinada ✅",
+      paragrafos: [`Sua defesa da multa da placa <b>${esc(placa)}</b> (${esc(orgao)}) foi assinada eletronicamente e registrada com o protocolo <b>${esc(protocolo)}</b>.`, "Baixe a peça com o comprovante de protocolo (PDF ou DOCX) e protocole no órgão dentro do prazo. A página da defesa mostra o passo a passo."],
+      botao: { texto: "Baixar peça e protocolo", url: `${urlBase()}/app/defesas/${defesaId}` },
+    }, defesaId),
   prazo: (u: Usuario, defesaId: string, placa: string, orgao: string, prazo: string, dias: number, acao: string) =>
     enviarEmail(u, `prazo_${dias}d`, `${dias <= 1 ? "Último dia" : `Faltam ${dias} dias`}: prazo da sua defesa · ${placa}`, {
       titulo: dias <= 1 ? "Atenção: o prazo termina amanhã" : `Faltam ${dias} dias para o prazo`,

@@ -154,6 +154,8 @@ export interface Defesa {
   protocolo?: string | null;
   resultado?: "deferida" | "indeferida" | null;
   resultado_em?: string | null;
+  protocolo_sm?: string | null; // Protocolo Senhor Multas (gerado na assinatura)
+  hash_peca?: string | null; // SHA-256 do texto da peça assinada
   fase_anterior_id?: string | null; // defesa da fase anterior (JARI ← defesa prévia; CETRAN ← JARI)
   proxima_fase_id?: string | null;
   tempo_geracao_s?: number;

@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { AlertTriangle, Camera, CheckCircle2, FileUp, Loader2, Scale, ScanText, Search, ShieldCheck, Sparkles, PenLine, Info, UserCheck, UserX, RotateCcw } from "lucide-react";
 import { prepararArquivo } from "@/lib/foto";
 import { SenhorCoruja, SenhorPlaca } from "@/components/Marca";
+import { Documentos } from "@/components/Documentos";
 import { Badge, Bar, Card, CardTitle, RESULTADO, StatusBadge, brl } from "@/components/ui";
 import type { Defesa, Multa } from "@/lib/types";
 
@@ -58,6 +59,7 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
   const [gerando, setGerando] = useState(false);
   const [etapa, setEtapa] = useState(0);
   const [semCredito, setSemCredito] = useState(false);
+  const [faltamDocs, setFaltamDocs] = useState<string[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [refazer, setRefazer] = useState<{ problema: string; orientacao: string } | null>(null);
@@ -110,6 +112,12 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
     setGerando(true);
     setEtapa(0);
     const r = await fetch(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: "{}" }).then((r) => r.json());
+    if (r.precisaDocumentos) {
+      setGerando(false);
+      setFaltamDocs(r.faltam);
+      setErro("Envie os documentos obrigatórios antes de gerar a defesa.");
+      return;
+    }
     if (r.precisaPagar) {
       setGerando(false);
       setSemCredito(true);
@@ -291,6 +299,11 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
         ) : jaGerada ? (
           <Link href={`/app/defesas/${defesa.id}`} className="btn btn-primary w-full !py-3.5">Abrir Defesa Pronta</Link>
         ) : (
+          <div className="space-y-6">
+          <Card>
+            <CardTitle extra={faltamDocs && faltamDocs.length === 0 ? <Badge tone="ok">completos</Badge> : <Badge tone="warn">obrigatórios</Badge>}>Documentos</CardTitle>
+            <Documentos defesaId={defesa.id} terceiro={multa.remetente?.situacao === "terceiro"} onMudar={(f) => setFaltamDocs(f)} />
+          </Card>
           <div className="panel p-5">
             {gerando ? (
               <div className="space-y-3">
@@ -312,13 +325,14 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
                   <span className="text-xs text-ink-400">saldo: {saldo} crédito(s)</span>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <button onClick={gerar} className="btn btn-primary flex-1 !py-3">Gerar Defesa (1 crédito)</button>
+                  <button onClick={gerar} disabled={!!faltamDocs?.length} title={faltamDocs?.length ? "Envie os documentos obrigatórios" : ""} className="btn btn-primary flex-1 !py-3">Gerar Defesa (1 crédito)</button>
                   <a href="#comparar" className="btn btn-ghost !py-3">Comparar com pagar com desconto</a>
                 </div>
-                <p className="mt-3 text-[11px] text-ink-400">O crédito só é consumido agora, ao confirmar a geração. Cobre todas as fases desta multa.</p>
+                <p className="mt-3 text-[11px] text-ink-400">{faltamDocs?.length ? "Envie os documentos obrigatórios acima para liberar a geração. " : ""}O crédito só é consumido agora, ao confirmar a geração. Cobre todas as fases desta multa.</p>
               </>
             )}
             {erro && <p className="mt-3 text-sm text-bad">{erro}</p>}
+          </div>
           </div>
         )}
       </div>

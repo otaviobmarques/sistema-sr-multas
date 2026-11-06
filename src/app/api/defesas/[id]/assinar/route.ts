@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { audit, db, save } from "@/lib/db";
 import { naoAutorizado, usuarioAtual } from "@/lib/session";
+import { hashTexto, proximoProtocolo, textoCanonico } from "@/lib/protocolo";
+import { Emails } from "@/lib/email";
 
 const DECLARACOES = ["data_hora", "local", "condutor", "documentos"];
 
@@ -16,10 +18,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!DECLARACOES.every((x) => declaracoes?.includes(x))) return NextResponse.json({ erro: "Confirme todos os fatos e declarações" }, { status: 400 });
   if (!nome || nome.trim().toLowerCase() !== u.nome.toLowerCase()) return NextResponse.json({ erro: "Digite seu nome completo exatamente como no cadastro para assinar" }, { status: 400 });
   const agora = new Date().toISOString();
-  defesa.validacao = { fatos_confirmados: declaracoes, declaracoes, ip: req.headers.get("x-forwarded-for") ?? "local", data: agora };
+  const multa = d.multas.find((m) => m.id === defesa.multa_id)!;
+  defesa.validacao = { fatos_confirmados: declaracoes, declaracoes, ip: (req.headers.get("x-forwarded-for") ?? "local").split(",")[0].trim(), data: agora };
+  defesa.hash_peca = hashTexto(textoCanonico(defesa, multa, u));
+  defesa.protocolo_sm = proximoProtocolo();
   defesa.assinada_em = agora;
   defesa.status = "pronta_para_protocolar";
-  audit(u.id, "defesa_assinada", `defesa:${defesa.id}`, `v${defesa.versoes.at(-1)!.versao}`);
+  await Emails.defesaAssinada(u, defesa.id, defesa.protocolo_sm, multa.placa, multa.orgao).catch(() => null);
+  audit(u.id, "defesa_assinada", `defesa:${defesa.id}`, `v${defesa.versoes.at(-1)!.versao} · ${defesa.protocolo_sm} · sha256 ${defesa.hash_peca?.slice(0, 16)}`);
   await save();
   return NextResponse.json({ ok: true, defesa });
 }

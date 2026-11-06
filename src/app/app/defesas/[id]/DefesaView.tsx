@@ -6,6 +6,8 @@ import clsx from "clsx";
 import { CheckCircle2, Download, FileSignature, History, Loader2, Printer, Send, ShieldCheck, Sparkles, Stamp, Wand2, XCircle } from "lucide-react";
 import { Badge, Card, CardTitle, StatusBadge, dataBR, FASES } from "@/components/ui";
 import { Peca } from "@/components/Peca";
+import { Documentos } from "@/components/Documentos";
+import { montarPeca } from "@/lib/peca-formato";
 import { Resultado } from "./Resultado";
 import type { Defesa, Multa } from "@/lib/types";
 
@@ -59,15 +61,15 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
     <div>
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="flex flex-wrap items-center gap-2"><StatusBadge status={defesa.status} />{defesa.modo === "conservador" && <Badge tone="info">Modo conservador</Badge>}</div>
+          <div className="flex flex-wrap items-center gap-2"><StatusBadge status={defesa.status} />{defesa.protocolo_sm && <a href={`/verificar/${defesa.protocolo_sm}`} target="_blank"><Badge tone="ok">Protocolo {defesa.protocolo_sm}</Badge></a>}{defesa.modo === "conservador" && <Badge tone="info">Modo conservador</Badge>}</div>
           <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white md:text-[28px]">Sua Defesa Pronta · {multa.orgao} · <span className="font-mono">{multa.placa}</span></h1>
           <p className="mt-1 text-sm text-ink-400">
             {FASES[defesa.fase]} · gerada pela IA em {defesa.tempo_geracao_s ?? 1}s · versão {v.versao} · {assinada ? `assinada em ${dataBR(defesa.assinada_em)}` : "confira os fatos, confirme e assine"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={`/api/defesas/${defesa.id}/docx`} className="btn btn-ghost"><Download className="size-4" /> DOCX</a>
-          <a href={`/imprimir/${defesa.id}`} target="_blank" className="btn btn-ghost"><Printer className="size-4" /> PDF</a>
+          <a href={`/api/defesas/${defesa.id}/docx`} className="btn btn-ghost"><Download className="size-4" /> {assinada ? "DOCX (peça + protocolo)" : "DOCX"}</a>
+          <a href={`/imprimir/${defesa.id}`} target="_blank" className="btn btn-ghost"><Printer className="size-4" /> {assinada ? "PDF (peça + protocolo)" : "Prévia em PDF"}</a>
           {!assinada && (
             <button onClick={() => setModalAssinar(true)} disabled={decl.length < DECL.length} className="btn btn-ok" title={decl.length < DECL.length ? "Confirme os fatos ao lado" : ""}>
               <FileSignature className="size-4" /> Confirmar e assinar
@@ -78,13 +80,8 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         <div className="space-y-3">
-          <div className="rounded-2xl bg-[#f7f5f0] p-7 text-[#1b1b1b] shadow-2xl shadow-black/40 md:p-10 [&_.mk-fato]:!bg-amber-200/70 [&_.mk-fato]:!text-[#5a3d00] [&_.mk-fato]:!border-amber-500 [&_.mk-fonte]:!bg-emerald-100 [&_.mk-fonte]:!text-[#0b4f35] [&_.mk-fonte]:!border-emerald-500 [&_sup]:!text-emerald-700">
-            <Peca peca={v.conteudo} citacoes={v.citacoes} cliente={cliente} />
-            {assinada && (
-              <div className="mt-8 border-t border-black/10 pt-4 text-center text-xs text-black/60">
-                Assinado eletronicamente por <b>{cliente.nome}</b> em {new Date(defesa.assinada_em!).toLocaleString("pt-BR")}
-              </div>
-            )}
+          <div className="rounded-2xl bg-white p-7 text-[#1b1b1b] shadow-2xl shadow-black/40 md:px-12 md:py-12 [&_.mk-fato]:!bg-amber-200/70 [&_.mk-fato]:!text-[#5a3d00] [&_.mk-fato]:!border-amber-500 [&_.mk-fonte]:!bg-emerald-100 [&_.mk-fonte]:!text-[#0b4f35] [&_.mk-fonte]:!border-emerald-500 [&_sup]:!text-emerald-700">
+            <Peca b={montarPeca({ conteudo: v.conteudo, citacoes: v.citacoes, multa, defesa, versao: v, cliente: cliente })} citacoes={v.citacoes} />
           </div>
           <p className="flex flex-wrap gap-4 px-1 text-[11px] text-ink-400">
             <span><span className="mk-fato">Amarelo</span> = fato para você confirmar</span>
@@ -112,11 +109,12 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
               <ol className="space-y-2 text-sm text-ink-300">
                 <li>1. Baixe a peça em <b className="text-white">PDF</b> (botão acima).</li>
                 <li>2. Acesse o canal de recursos do {multa.orgao} (online ou presencial).</li>
-                <li>3. Anexe a peça, sua CNH, o CRLV e a notificação.</li>
+                <li>3. Anexe a peça (com o comprovante de protocolo) e os documentos abaixo.</li>
                 <li>4. Informe abaixo o número do protocolo gerado.</li>
               </ol>
+              <div className="mt-4"><Documentos defesaId={defesa.id} terceiro={multa.remetente?.situacao === "terceiro"} compacto /></div>
               <div className="mt-4 flex gap-2">
-                <input className="input" placeholder="Nº do protocolo" value={protocolo} onChange={(e) => setProtocolo(e.target.value)} />
+                <input className="input" placeholder="Nº do protocolo no órgão" value={protocolo} onChange={(e) => setProtocolo(e.target.value)} />
                 <button onClick={protocolar} className="btn btn-primary">Registrar</button>
               </div>
             </Card>

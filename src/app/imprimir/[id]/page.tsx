@@ -1,34 +1,41 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { exigirUsuario } from "@/lib/session";
-import { Peca } from "@/components/Peca";
+import { Comprovante, Peca } from "@/components/Peca";
+import { dadosDocumento } from "@/lib/comprovante";
 import { AutoPrint } from "./AutoPrint";
 
 export const dynamic = "force-dynamic";
 
-/** Versão para impressão / "Salvar como PDF" em Verdana. */
+/** Peça + Comprovante de Protocolo, em A4 (margens ABNT), para "Salvar como PDF". */
 export default async function Imprimir({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const u = await exigirUsuario();
-  const defesa = db().defesas.find((x) => x.id === id && x.dono_id === u.id);
-  const v = defesa?.versoes.at(-1);
-  if (!defesa || !v) notFound();
-  const confirmadas = v.citacoes.filter((c) => c.status_trava === "confirmada");
+  const d = db();
+  const defesa = d.defesas.find((x) => x.id === id && (x.dono_id === u.id || u.perfil === "admin"));
+  if (!defesa?.versoes.length) notFound();
+  const multa = d.multas.find((m) => m.id === defesa.multa_id)!;
+  const cliente = d.usuarios.find((x) => x.id === defesa.dono_id) ?? u;
+  const { blocos, comprovante, versao } = await dadosDocumento(defesa, multa, cliente);
   return (
-    <div className="min-h-screen bg-white text-black">
-      <div className="mx-auto max-w-[780px] px-12 py-14">
-        <Peca peca={v.conteudo} citacoes={v.citacoes} cliente={u} plain />
-        <div className="mt-12 text-center text-[13px]" style={{ fontFamily: "Verdana" }}>
-          {defesa.assinada_em ? <>Assinado eletronicamente por {u.nome} em {new Date(defesa.assinada_em).toLocaleString("pt-BR")}</> : "____________________________________"}
-          <div>{u.nome}</div>
-        </div>
-        {confirmadas.length > 0 && (
-          <div className="mt-10 border-t pt-4 text-[11px]" style={{ fontFamily: "Verdana" }}>
-            <b>FUNDAMENTOS CONFERIDOS NA FONTE OFICIAL</b>
-            {confirmadas.map((c, i) => <div key={c.id}>Fonte {i + 1}: {c.rotulo}</div>)}
-          </div>
-        )}
+    <div className="min-h-screen bg-[#e9e7e2] py-8 print:bg-white print:py-0">
+      <style>{`
+        @page { size: A4; margin: 30mm 20mm 20mm 30mm; }
+        @media print { .folha { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: auto !important; min-height: 0 !important; } .quebra { break-before: page; } }
+      `}</style>
+      <div className="no-print mx-auto mb-4 flex max-w-[210mm] items-center justify-between px-2 text-sm text-black/70">
+        <span>{blocos.titulo} · versão {versao.versao}{defesa.protocolo_sm ? ` · ${defesa.protocolo_sm}` : " · ainda não assinada"}</span>
+        <span>Use “Salvar como PDF” na janela de impressão</span>
       </div>
+      <div className="folha mx-auto w-[210mm] min-h-[297mm] bg-white px-[20mm] pb-[20mm] pl-[30mm] pt-[30mm] shadow-xl">
+        <Peca b={blocos} citacoes={versao.citacoes} plain />
+        <div className="mt-10 border-t border-black/15 pt-2 text-center text-[9px] text-black/50">{blocos.rodape}</div>
+      </div>
+      {comprovante && (
+        <div className="folha quebra mx-auto mt-8 w-[210mm] min-h-[297mm] bg-white px-[20mm] pb-[20mm] pl-[30mm] pt-[30mm] shadow-xl">
+          <Comprovante c={comprovante} />
+        </div>
+      )}
       <AutoPrint />
     </div>
   );

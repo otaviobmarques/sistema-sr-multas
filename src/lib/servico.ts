@@ -1,7 +1,8 @@
-import { audit, db, saldo, save, uid } from "./db";
+import { audit, db, saldo, save, uid, supabaseAtivo } from "./db";
 import { auditar, classificarEscopo, estimar } from "./rules";
 import { gerarDefesa } from "./ai/pipeline";
 import { regrasAssinadas } from "./regras-validacao";
+import { DOCS, faltantes } from "./documentos";
 import { Emails } from "./email";
 import type { Extracao } from "./ai/extractor";
 import type { Defesa, Multa, Usuario } from "./types";
@@ -117,6 +118,16 @@ export async function gerar(defesaId: string, usuarioId: string, ajuste?: string
   const multa = d.multas.find((m) => m.id === defesa.multa_id)!;
   if (defesa.status === "fora_do_escopo") throw new Error("Caso fora do escopo automatizado");
 
+  // Etapa 7: documentos obrigatórios antes de pesquisar/redigir (e antes de consumir crédito)
+  if (supabaseAtivo()) {
+    const faltam = await faltantes(d, defesa, multa);
+    defesa.documentos_pendentes = faltam.map((t) => DOCS[t].rotulo);
+    if (faltam.length) {
+      defesa.status = "aguardando_documentos";
+      await save();
+      return { precisaPagar: false as const, precisaDocumentos: true as const, faltam, defesa };
+    }
+  }
   if (!defesa.credito_consumido) {
     if (saldo(usuarioId) < 1) {
       defesa.status = "aguardando_pagamento";
