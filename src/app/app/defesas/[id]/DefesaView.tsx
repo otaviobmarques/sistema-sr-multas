@@ -1,5 +1,6 @@
 "use client";
 
+import { chamarApi } from "@/lib/rede";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import clsx from "clsx";
@@ -35,7 +36,7 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
   async function pedirAjuste() {
     if (!ajuste.trim()) return;
     setAjustando(true);
-    const r = await fetch(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: JSON.stringify({ ajuste }) }).then((r) => r.json());
+    const r = await chamarApi(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: JSON.stringify({ ajuste }) }, 170_000);
     setAjustando(false);
     if (r.erro) return setErro(r.erro);
     setAjuste("");
@@ -45,14 +46,14 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
   async function assinar() {
     setErro(null);
     setAssinando(true);
-    const r = await fetch(`/api/defesas/${defesa.id}/assinar`, { method: "POST", body: JSON.stringify({ declaracoes: decl, nome }) }).then((r) => r.json());
+    const r = await chamarApi(`/api/defesas/${defesa.id}/assinar`, { method: "POST", body: JSON.stringify({ declaracoes: decl, nome }) });
     setAssinando(false);
     if (r.erro) return setErro(r.erro);
     setModalAssinar(false);
     router.refresh();
   }
   async function protocolar() {
-    const r = await fetch(`/api/defesas/${defesa.id}/protocolar`, { method: "POST", body: JSON.stringify({ protocolo }) }).then((r) => r.json());
+    const r = await chamarApi(`/api/defesas/${defesa.id}/protocolar`, { method: "POST", body: JSON.stringify({ protocolo }) });
     if (r.erro) return setErro(r.erro);
     router.refresh();
   }

@@ -5,6 +5,7 @@ import { naoAutorizado, usuarioAtual } from "@/lib/session";
 import { db, save, uid } from "@/lib/db";
 
 export const runtime = "nodejs";
+export const maxDuration = 90;
 const TIPOS = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
 /** Etapas 1–5: recebe a notificação, extrai (IA), classifica escopo, audita por regras e estima. */

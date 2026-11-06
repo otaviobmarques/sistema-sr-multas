@@ -3,7 +3,7 @@ import { gerar } from "@/lib/servico";
 import { naoAutorizado, usuarioAtual } from "@/lib/session";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

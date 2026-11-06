@@ -6,6 +6,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { AlertTriangle, Camera, CheckCircle2, FileUp, Loader2, Scale, ScanText, Search, ShieldCheck, Sparkles, PenLine, Info, UserCheck, UserX, RotateCcw } from "lucide-react";
 import { prepararArquivo } from "@/lib/foto";
+import { chamarApi } from "@/lib/rede";
 import { SenhorCoruja, SenhorPlaca } from "@/components/Marca";
 import { Documentos } from "@/components/Documentos";
 import { Badge, Bar, Card, CardTitle, RESULTADO, StatusBadge, brl } from "@/components/ui";
@@ -48,6 +49,18 @@ const ETAPAS_GERACAO = [
   { i: ShieldCheck, t: "Trava automática", d: "conferindo cada citação na fonte oficial" },
 ];
 
+/** Barra de progresso estimada + contador; avisa quando passa do tempo normal. */
+function Progresso({ segundos, estimativa, texto }: { segundos: number; estimativa: number; texto: string }) {
+  const pct = Math.min(95, Math.round(100 * (1 - Math.exp(-segundos / (estimativa * 0.75)))));
+  const demorando = segundos > estimativa * 2.5;
+  return (
+    <div className="mx-auto mt-5 w-full max-w-xs text-left">
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-gradient-to-r from-ia to-brand transition-all duration-1000" style={{ width: `${pct}%` }} /></div>
+      <div className="mt-1.5 flex justify-between text-[11px] text-ink-400"><span>{demorando ? "Está demorando mais que o normal, aguarde mais um pouco…" : texto}</span><span className="ml-2 font-mono">{segundos}s</span></div>
+    </div>
+  );
+}
+
 export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa | null; multa: Multa | null; saldo: number; gravidade: G }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
@@ -63,6 +76,13 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [refazer, setRefazer] = useState<{ problema: string; orientacao: string } | null>(null);
+  const [segundos, setSegundos] = useState(0);
+  useEffect(() => {
+    if (!enviando && !gerando) return setSegundos(0);
+    setSegundos(0);
+    const t = setInterval(() => setSegundos((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [enviando, gerando]);
 
   useEffect(() => {
     if (!gerando) return;
@@ -75,11 +95,16 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
     setRefazer(null);
     setEnviando(true);
     const file = await prepararArquivo(original);
+    if (file.size > 4_200_000) {
+      setErro(file.type === "application/pdf" ? "Este PDF passa de 4 MB. Tire uma foto da notificação (o app reduz o tamanho automaticamente) ou envie um PDF menor." : "Arquivo grande demais. Tire a foto novamente pelo botão Tirar foto.");
+      setEnviando(false);
+      return;
+    }
     const fd = new FormData();
     fd.append("arquivo", file);
-    const r = await fetch("/api/multas", { method: "POST", body: fd }).then((r) => r.json());
+    const r = await chamarApi<{ defesa_id?: string; orientacao?: string; problema?: string }>("/api/multas", { method: "POST", body: fd }, 75_000);
     if (r.orientacao) {
-      setRefazer({ problema: r.problema, orientacao: r.orientacao });
+      setRefazer({ problema: r.problema ?? "", orientacao: r.orientacao });
       setEnviando(false);
       return;
     }
@@ -111,10 +136,10 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
     if (sujo) await salvar();
     setGerando(true);
     setEtapa(0);
-    const r = await fetch(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: "{}" }).then((r) => r.json());
+    const r = await chamarApi<{ precisaDocumentos?: boolean; faltam?: string[]; precisaPagar?: boolean }>(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: "{}" }, 170_000);
     if (r.precisaDocumentos) {
       setGerando(false);
-      setFaltamDocs(r.faltam);
+      setFaltamDocs(r.faltam ?? []);
       setErro("Envie os documentos obrigatórios antes de gerar a defesa.");
       return;
     }
@@ -151,6 +176,7 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
           <p className="mt-2 max-w-sm text-sm text-ink-400">
             {enviando ? "Extraindo placa, auto, órgão, enquadramento, fase e prazo e rodando a auditoria." : "Tire uma foto da notificação com o celular ou envie o PDF. A IA reconhece a foto, confere a qualidade e identifica o titular. A análise é gratuita."}
           </p>
+          {enviando && <Progresso segundos={segundos} estimativa={15} texto="Leva em média 10 a 20 segundos." />}
           {!enviando && (
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               <button type="button" onClick={(e) => { e.preventDefault(); cameraRef.current?.click(); }} className="btn btn-primary"><Camera className="size-4" /> Tirar foto</button>
@@ -311,6 +337,7 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
                   <SenhorCoruja className="h-14 shrink-0 animate-pulse" />
                   <span className="text-sm font-semibold text-[#13294b]">O Senhor Coruja está preparando e conferindo a sua defesa…</span>
                 </div>
+                <Progresso segundos={segundos} estimativa={30} texto="Leva em média 20 a 40 segundos. Não feche esta tela." />
                 {ETAPAS_GERACAO.map(({ i: I, t, d }, n) => (
                   <div key={t} className={clsx("flex items-center gap-3 rounded-xl border p-3 transition", n <= etapa ? "border-ia/30 bg-ia/5" : "border-white/5 opacity-40")}>
                     {n < etapa ? <CheckCircle2 className="size-5 text-ok" /> : n === etapa ? <Loader2 className="size-5 animate-spin text-ia" /> : <I className="size-5 text-ink-400" />}
