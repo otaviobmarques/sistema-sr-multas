@@ -6,7 +6,7 @@ export const metadata = { title: "Termos de uso · Senhor Multas" };
 
 export default function Termos() {
   return (
-    <Documento titulo="Termos de uso" versao="Versão 0.1 (minuta) · 06/11/2026">
+    <Documento titulo="Termos de uso" versao="Versão 1.0 · vigente desde 06/11/2026">
       <p>
         Estes Termos regulam o uso da plataforma <strong>Senhor Multas</strong>, operada por <strong>{EMPRESA.razaoSocial}</strong>, CNPJ <strong>{EMPRESA.cnpj}</strong>, com sede na <strong>{EMPRESA.endereco}</strong> (“Senhor Multas”, “nós”). Ao criar uma conta, você declara ter lido e aceitado estes Termos e a <Link href="/privacidade" className="text-brand underline">Política de privacidade</Link>.
       </p>
@@ -16,7 +16,7 @@ export default function Termos() {
 
       <h2>2. O que o Senhor Multas não faz</h2>
       <ul>
-        <li><strong>Não é escritório de advocacia</strong> e não presta consultoria jurídica individual. [Ajustar conforme o parecer jurídico sobre o modelo da operação.]</li>
+        <li><strong>Não é escritório de advocacia</strong> e não presta consultoria jurídica individual.</li>
         <li><strong>Não garante resultado.</strong> A decisão é sempre do órgão julgador. A estimativa de êxito é uma faixa baseada em casos anteriores, não uma promessa.</li>
         <li>Não protocola a defesa em seu nome sem a sua assinatura, nem age como seu representante perante os órgãos de trânsito.</li>
         <li>Casos de suspensão ou cassação do direito de dirigir e documentos ilegíveis ficam fora do atendimento automatizado e são sinalizados para análise especial.</li>
@@ -37,21 +37,25 @@ export default function Termos() {
       <ul>
         <li>1 crédito corresponde à defesa completa de 1 multa, incluindo as fases seguintes da mesma multa (defesa prévia, JARI e CETRAN).</li>
         <li>A análise inicial é gratuita. O crédito só é consumido quando você confirma a geração da defesa.</li>
-        <li>Os créditos valem por <strong>[12 meses]</strong> a partir da compra e são liberados após a confirmação do pagamento pela instituição de pagamento (Asaas).</li>
+        <li>Os créditos valem por <strong>12 meses</strong> a partir da compra e são liberados após a confirmação do pagamento pela instituição de pagamento (Asaas).</li>
         <li>Pagamentos por Pix, cartão ou boleto são processados pelo Asaas. Não armazenamos dados de cartão.</li>
       </ul>
 
       <h2>6. Cancelamento, arrependimento e reembolso</h2>
-      <p>[A DEFINIR PELO JURÍDICO.] Sugestão de partida: direito de arrependimento em até 7 dias da compra para créditos não utilizados (Código de Defesa do Consumidor, art. 49); créditos já consumidos não são reembolsáveis, pois o serviço foi prestado; estornos e contestações removem os créditos ainda não usados.</p>
+      <ul>
+        <li>Você pode desistir da compra em até <strong>7 (sete) dias</strong> contados do pagamento, com reembolso integral dos créditos não utilizados (Código de Defesa do Consumidor, art. 49). Basta pedir pelo e-mail {EMPRESA.emailAtendimento}.</li>
+        <li>Créditos já consumidos (defesa gerada) não são reembolsáveis, pois o serviço foi prestado a seu pedido.</li>
+        <li>O reembolso é feito pelo mesmo meio de pagamento, pelo Asaas. Estornos e contestações de pagamento removem os créditos ainda não utilizados.</li>
+      </ul>
 
       <h2>7. Uso aceitável</h2>
       <p>É proibido enviar documentos de terceiros sem autorização, tentar manipular a IA com instruções ocultas nos arquivos, usar a plataforma para fins ilícitos ou tentar acessar dados de outros usuários.</p>
 
       <h2>8. Limitação de responsabilidade</h2>
-      <p>[A DEFINIR PELO JURÍDICO.] Não respondemos pelo resultado do julgamento, por defesas não protocoladas no prazo ou por informações incorretas fornecidas pelo usuário, nos limites permitidos pelo Código de Defesa do Consumidor.</p>
+      <p>Não respondemos pelo resultado do julgamento, por defesas não protocoladas no prazo ou por informações incorretas fornecidas pelo usuário, nos limites permitidos pelo Código de Defesa do Consumidor.</p>
 
       <h2>9. Alterações e foro</h2>
-      <p>Podemos atualizar estes Termos, avisando com antecedência pelos canais cadastrados. Fica eleito o foro do domicílio do consumidor. Dúvidas: <strong>{EMPRESA.emailAtendimento}</strong>.</p>
+      <p>Podemos atualizar estes Termos, avisando com antecedência pelos canais cadastrados. Fica eleito o foro do domicílio do consumidor. Dúvidas: <strong>{EMPRESA.emailAtendimento}</strong> · <strong>{EMPRESA.telefone}</strong>.</p>
     </Documento>
   );
 }
