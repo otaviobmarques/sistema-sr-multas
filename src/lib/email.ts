@@ -10,7 +10,7 @@ import type { Usuario } from "./types";
 /** Só envia com chave E remetente de domínio verificado (sem domínio, o Resend só entrega para o dono da conta). */
 export const emailAtivo = () => Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_REMETENTE);
 const remetente = () => process.env.EMAIL_REMETENTE!;
-export const urlBase = () => (process.env.APP_URL && !process.env.APP_URL.includes("localhost") ? process.env.APP_URL : "https://sistema-sr-multas.vercel.app");
+export const urlBase = () => (process.env.APP_URL && !process.env.APP_URL.includes("localhost") ? process.env.APP_URL : "https://senhormultas.com.br");
 
 const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 

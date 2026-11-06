@@ -8,7 +8,8 @@ Este sistema faz **somente a defesa** da multa (análise, Defesa Pronta, valida�
 
 ## Em produção
 
-- **Site:** https://sistema-sr-multas.vercel.app (Vercel, time REDBOX, região São Paulo `gru1`)
+- **Site:** https://senhormultas.com.br (www redireciona; https://app.senhormultas.com.br abre a área do cliente; também em sistema-sr-multas.vercel.app) — Vercel, time REDBOX, região São Paulo `gru1`. DNS na HostGator.
+- **E-mail:** Resend, domínio senhormultas.com.br (região sa-east-1). Remetente em `EMAIL_REMETENTE`.
 - **Banco e login:** Supabase `senhor-multas` (`sa-east-1`) — tabela `sm_registros` + Supabase Auth
 - **Deploy automático:** todo push na branch `main` deste repositório publica uma nova versão.
 - **Variáveis na Vercel:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SM_SERVER_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_EMAILS`, `ASAAS_ENV`, `ASAAS_WEBHOOK_TOKEN` (e `ASAAS_API_KEY` quando o Asaas for ativado).
