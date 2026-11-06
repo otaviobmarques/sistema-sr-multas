@@ -13,7 +13,7 @@ const METODOS = [
   { k: "BOLETO", t: "Boleto", i: Barcode },
 ] as const;
 
-export function Checkout({ planos, defesaRetorno, demo }: { planos: Plano[]; defesaRetorno: string | null; demo: boolean }) {
+export function Checkout({ planos, defesaRetorno, demo, podeSimular = true }: { planos: Plano[]; defesaRetorno: string | null; demo: boolean; podeSimular?: boolean }) {
   const router = useRouter();
   const [sel, setSel] = useState("pack5");
   const [metodo, setMetodo] = useState<(typeof METODOS)[number]["k"]>("PIX");
@@ -131,7 +131,8 @@ export function Checkout({ planos, defesaRetorno, demo }: { planos: Plano[]; def
               )}
               <div className="mt-4 flex flex-wrap gap-2">
                 {pedido.invoice_url && <a href={pedido.invoice_url} target="_blank" className="btn btn-ghost"><ExternalLink className="size-4" /> Abrir fatura Asaas</a>}
-                {demo && <button onClick={simular} disabled={carregando} className="btn btn-ok">{carregando ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />} Simular pagamento (webhook)</button>}
+                {demo && !podeSimular && <p className="text-xs text-warn">Pagamentos online serão ativados em breve. Fale com o atendimento para liberar créditos.</p>}
+                {demo && podeSimular && <button onClick={simular} disabled={carregando} className="btn btn-ok">{carregando ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />} Simular pagamento (webhook)</button>}
               </div>
               <p className="mt-3 text-[11px] text-ink-400">Os créditos são liberados automaticamente quando o Asaas confirma o pagamento pelo webhook.</p>
             </div>

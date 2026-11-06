@@ -17,7 +17,8 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
         subtitle="1 crédito = 1 defesa completa (todas as fases daquela multa) · valores ilustrativos"
         actions={<><Badge tone="ia">Saldo: {saldo(u.id)} crédito(s)</Badge>{parceiro && <Badge tone="brand">Indicação: {parceiro.nome}</Badge>}</>}
       />
-      <Checkout planos={d.planos} defesaRetorno={defesa ?? null} demo={!process.env.ASAAS_API_KEY} />
+      <Checkout planos={d.planos} defesaRetorno={defesa ?? null} demo={!process.env.ASAAS_API_KEY}
+        podeSimular={!process.env.NEXT_PUBLIC_SUPABASE_URL || u.perfil === "admin" || process.env.SM_DEMO_PAGAMENTO === "1"} />
     </div>
   );
 }
