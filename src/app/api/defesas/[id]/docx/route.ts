@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { audit, db, save } from "@/lib/db";
 import { gerarDocx } from "@/lib/docx";
 import { dadosDocumento } from "@/lib/comprovante";
 import { usuarioAtual } from "@/lib/session";
@@ -15,6 +15,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const multa = d.multas.find((m) => m.id === defesa.multa_id)!;
   const cliente = d.usuarios.find((x) => x.id === defesa.dono_id) ?? u;
   const { blocos, comprovante, versao } = await dadosDocumento(defesa, multa, cliente);
+  if (defesa.dono_id !== u.id) {
+    audit(u.id, "defesa_baixada_admin", `defesa:${defesa.id}`, "docx");
+    await save();
+  }
   const buf = await gerarDocx(blocos, versao.citacoes, comprovante);
   const nome = `${blocos.titulo.toLowerCase().replace(/[^a-z0-9à-ú]+/gi, "-")}-${multa.placa}${defesa.protocolo_sm ? `-${defesa.protocolo_sm}` : `-v${versao.versao}`}.docx`;
   return new Response(new Uint8Array(buf), {

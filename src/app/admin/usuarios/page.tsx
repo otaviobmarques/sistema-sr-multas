@@ -48,7 +48,7 @@ export default async function Usuarios({ searchParams }: { searchParams: Promise
                     </td>
                     <td className="px-5 py-3"><Badge tone={u.perfil === "admin" ? "brand" : u.perfil === "qualidade" ? "ia" : "neutral"}>{PERFIL[u.perfil] ?? u.perfil}</Badge></td>
                     <td className="px-5 py-3 font-mono text-ink-200">{saldo(u.id)}</td>
-                    <td className="px-5 py-3 font-mono text-ink-300">{defesas}</td>
+                    <td className="px-5 py-3 font-mono text-ink-300">{defesas ? <a href={`/admin/defesas?cliente=${u.id}`} className="text-brand hover:underline">{defesas}</a> : 0}</td>
                     <td className="px-5 py-3 text-ink-400">{new Date(u.criado_em).toLocaleDateString("pt-BR")}</td>
                     <td className="px-5 py-3 text-right"><AcoesUsuario id={u.id} nome={u.nome} saldo={saldo(u.id)} interna={interna} emailAtivo={emailAtivo()} /></td>
                   </tr>

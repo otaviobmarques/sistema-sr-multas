@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
+import { audit, db, save } from "@/lib/db";
 import { exigirUsuario } from "@/lib/session";
 import { Comprovante, Peca } from "@/components/Peca";
 import { dadosDocumento } from "@/lib/comprovante";
@@ -17,6 +17,10 @@ export default async function Imprimir({ params }: { params: Promise<{ id: strin
   const multa = d.multas.find((m) => m.id === defesa.multa_id)!;
   const cliente = d.usuarios.find((x) => x.id === defesa.dono_id) ?? u;
   const { blocos, comprovante, versao } = await dadosDocumento(defesa, multa, cliente);
+  if (defesa.dono_id !== u.id) {
+    audit(u.id, "defesa_baixada_admin", `defesa:${defesa.id}`, "pdf");
+    await save();
+  }
   return (
     <div className="min-h-screen bg-[#e9e7e2] py-8 print:bg-white print:py-0">
       <style>{`
