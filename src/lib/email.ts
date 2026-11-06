@@ -99,6 +99,16 @@ export const Emails = {
       paragrafos: ["Recebemos um pedido para redefinir a senha da sua conta. Se foi você, clique no botão abaixo e escolha uma nova senha.", "O link vale por <b>1 hora</b> e só pode ser usado uma vez. Se não foi você, ignore este e-mail: sua senha continua a mesma."],
       botao: { texto: "Criar nova senha", url: `${urlBase()}/redefinir?token=${token}` },
     }),
+  convite: (u: Usuario, token: string, creditos: number) =>
+    enviarEmail(u, "convite", "Seu acesso ao Senhor Multas", {
+      titulo: `Olá, ${esc(u.nome.split(" ")[0])}! Seu acesso está pronto`,
+      paragrafos: [
+        "Você foi convidado(a) para usar o <b>Senhor Multas</b>: envie a foto da notificação e receba a Defesa Pronta em minutos, com lei e jurisprudência conferidas.",
+        creditos > 0 ? `Sua conta já tem <b>${creditos === 1 ? "1 crédito" : `${creditos} créditos`}</b> de cortesia.` : "Depois de criar sua senha, é só enviar a primeira multa.",
+        "Clique no botão para criar sua senha. O link vale por <b>7 dias</b> e só pode ser usado uma vez.",
+      ],
+      botao: { texto: "Criar minha senha", url: `${urlBase()}/redefinir?token=${token}` },
+    }),
   pagamentoConfirmado: (u: Usuario, plano: string, creditos: number, pedidoId: string) =>
     enviarEmail(u, "pagamento_confirmado", "Pagamento confirmado · seus créditos já estão disponíveis", {
       titulo: "Pagamento confirmado ✅",

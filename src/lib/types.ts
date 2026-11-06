@@ -37,6 +37,7 @@ export interface Usuario {
   parceiro_id?: string | null; // equipe do parceiro (perfil "parceiro")
   email_confirmado?: boolean | null; // false = aguardando confirmação (contas antigas: undefined = confirmado)
   asaas_customer_id?: string | null;
+  criado_por?: string | null; // id do admin que criou a conta (contas de teste/convidados)
   criado_em: string;
 }
 

@@ -6,6 +6,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import {
   BadgeCheck, Bot, ListChecks, UserRound, Settings2, Car, CreditCard, FileStack, Gauge, Handshake, LayoutDashboard, Layers, LogOut, Menu, Scale, ShieldCheck, Upload, Wallet, X, Library, RotateCcw,
+  Users,
 } from "lucide-react";
 import { Logo } from "./ui";
 
@@ -22,6 +23,7 @@ const NAV = {
   ],
   admin: [
     { href: "/admin", label: "Visão geral", icon: Gauge },
+    { href: "/admin/usuarios", label: "Usuários", icon: Users },
     { href: "/admin/jurimetria", label: "Jurimetria", icon: Scale },
     { href: "/admin/financeiro", label: "Financeiro", icon: CreditCard },
     { href: "/admin/pagamentos", label: "Pagamentos (gateways)", icon: Settings2 },
