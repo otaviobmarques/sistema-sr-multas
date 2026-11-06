@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { AlertTriangle, Camera, CheckCircle2, FileUp, Loader2, Scale, ScanText, Search, ShieldCheck, Sparkles, PenLine, Info, UserCheck, UserX, RotateCcw } from "lucide-react";
-import { prepararArquivo } from "@/lib/foto";
+import { LIMITE_ENVIO, prepararArquivo } from "@/lib/foto";
 import { chamarApi } from "@/lib/rede";
 import { SenhorCoruja, SenhorPlaca } from "@/components/Marca";
 import { Documentos } from "@/components/Documentos";
@@ -77,6 +77,10 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
   const cameraRef = useRef<HTMLInputElement>(null);
   const [refazer, setRefazer] = useState<{ problema: string; orientacao: string } | null>(null);
   const [segundos, setSegundos] = useState(0);
+  const [grande, setGrande] = useState<string | null>(null); // tamanho do arquivo que não coube
+  const [mostrarDrive, setMostrarDrive] = useState(false);
+  const [link, setLink] = useState("");
+  const [compressao, setCompressao] = useState<{ de: string; texto: string; pct: number } | null>(null);
   useEffect(() => {
     if (!enviando && !gerando) return setSegundos(0);
     setSegundos(0);
@@ -94,14 +98,44 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
     setErro(null);
     setRefazer(null);
     setEnviando(true);
-    const file = await prepararArquivo(original);
-    if (file.size > 4_200_000) {
-      setErro(file.type === "application/pdf" ? "Este PDF passa de 4 MB. Tire uma foto da notificação (o app reduz o tamanho automaticamente) ou envie um PDF menor." : "Arquivo grande demais. Tire a foto novamente pelo botão Tirar foto.");
+    const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
+    const file = await prepararArquivo(original, (p) => {
+      if (p.fase === "foto") return setCompressao({ de: mb(original.size), texto: "Ajustando a foto para envio…", pct: 60 });
+      setCompressao({
+        de: mb(original.size),
+        texto: `Reduzindo o PDF: página ${p.pagina} de ${p.total}${(p.tentativa ?? 1) > 1 ? " (ajustando a qualidade)" : ""}…`,
+        pct: Math.round((95 * (p.pagina ?? 0)) / (p.total ?? 1)),
+      });
+    });
+    if (file !== original && file.size < original.size) {
+      setCompressao({ de: mb(original.size), texto: `Pronto: ${mb(original.size)} → ${mb(file.size)}. Enviando…`, pct: 100 });
+      await new Promise((r) => setTimeout(r, 700));
+    }
+    setCompressao(null);
+    setSegundos(0);
+    if (file.size > LIMITE_ENVIO) {
+      setGrande(`${(original.size / 1024 / 1024).toFixed(1).replace(".", ",")} MB`);
+      setMostrarDrive(true);
       setEnviando(false);
       return;
     }
     const fd = new FormData();
     fd.append("arquivo", file);
+    await processar(fd);
+  }
+
+  async function enviarLink() {
+    if (!link.trim()) return;
+    setErro(null);
+    setRefazer(null);
+    setEnviando(true);
+    const fd = new FormData();
+    fd.append("link", link.trim());
+    await processar(fd);
+  }
+
+  async function processar(fd: FormData) {
+    setGrande(null);
     const r = await chamarApi<{ defesa_id?: string; orientacao?: string; problema?: string }>("/api/multas", { method: "POST", body: fd }, 75_000);
     if (r.orientacao) {
       setRefazer({ problema: r.problema ?? "", orientacao: r.orientacao });
@@ -172,11 +206,16 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
           <div className={clsx("grid size-36 place-items-center rounded-full bg-[#f5f3ef] ring-4 transition", enviando ? "ring-ia/40" : "ring-brand/25")}>
             <SenhorPlaca className={clsx("h-32 translate-y-2", enviando && "animate-pulse")} />
           </div>
-          <h2 className="mt-6 text-lg font-semibold text-white">{enviando ? "Lendo sua notificação…" : "Arraste a notificação aqui"}</h2>
+          <h2 className="mt-6 text-lg font-semibold text-white">{compressao ? "Preparando o arquivo…" : enviando ? "Lendo sua notificação…" : "Arraste a notificação aqui"}</h2>
           <p className="mt-2 max-w-sm text-sm text-ink-400">
-            {enviando ? "Extraindo placa, auto, órgão, enquadramento, fase e prazo e rodando a auditoria." : "Tire uma foto da notificação com o celular ou envie o PDF. A IA reconhece a foto, confere a qualidade e identifica o titular. A análise é gratuita."}
+            {compressao ? `Arquivo de ${compressao.de}: reduzindo aqui mesmo, no seu aparelho, para enviar mais rápido.` : enviando ? "Extraindo placa, auto, órgão, enquadramento, fase e prazo e rodando a auditoria." : "Tire uma foto da notificação com o celular ou envie o PDF. A IA reconhece a foto, confere a qualidade e identifica o titular. A análise é gratuita."}
           </p>
-          {enviando && <Progresso segundos={segundos} estimativa={15} texto="Leva em média 10 a 20 segundos." />}
+          {compressao ? (
+            <div className="mx-auto mt-5 w-full max-w-xs text-left">
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full rounded-full bg-gradient-to-r from-brand to-ok transition-all duration-300" style={{ width: `${compressao.pct}%` }} /></div>
+              <div className="mt-1.5 flex justify-between text-[11px] text-ink-400"><span>{compressao.texto}</span><span className="ml-2 font-mono">{compressao.pct}%</span></div>
+            </div>
+          ) : enviando && <Progresso segundos={segundos} estimativa={15} texto="Leva em média 10 a 20 segundos." />}
           {!enviando && (
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               <button type="button" onClick={(e) => { e.preventDefault(); cameraRef.current?.click(); }} className="btn btn-primary"><Camera className="size-4" /> Tirar foto</button>
@@ -194,6 +233,31 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
               <p className="mt-1 text-xs text-ink-400">Dica: notificação inteira no quadro, em superfície plana, com boa luz e sem flash. Nada foi cobrado.</p>
             </div>
             <button onClick={() => cameraRef.current?.click()} className="btn btn-ghost self-start"><RotateCcw className="size-4" /> Refazer</button>
+          </div>
+        )}
+        {grande && (
+          <div className="rise mt-4 flex gap-3 rounded-xl border border-warn/30 bg-warn/5 p-4">
+            <AlertTriangle className="size-5 shrink-0 text-warn" />
+            <div className="text-sm">
+              <div className="font-semibold text-white">Arquivo grande demais para envio direto ({grande})</div>
+              <p className="mt-1 text-ink-300">O limite é de 4 MB e não foi possível reduzir este arquivo o suficiente. Você pode tirar uma foto da notificação pelo celular (o app ajusta o tamanho) ou colar abaixo o link do arquivo no Google Drive.</p>
+            </div>
+          </div>
+        )}
+        {!enviando && (
+          <div className="mt-4 rounded-xl border border-white/8 bg-white/[.02] p-4">
+            {mostrarDrive ? (
+              <>
+                <label className="label mb-1.5 block">Link do Google Drive</label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input value={link} onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => e.key === "Enter" && enviarLink()} className="input" placeholder="https://drive.google.com/file/d/…" inputMode="url" />
+                  <button onClick={enviarLink} disabled={!link.trim()} className="btn btn-primary shrink-0">Ler pelo link</button>
+                </div>
+                <p className="mt-2 text-[11px] text-ink-400">No Drive: clique com o botão direito no arquivo → <b>Compartilhar</b> → em “Acesso geral”, escolha <b>Qualquer pessoa com o link</b> → <b>Copiar link</b>. PDF de até 30 MB. Depois da leitura, você pode voltar o arquivo para privado.</p>
+              </>
+            ) : (
+              <button onClick={() => setMostrarDrive(true)} className="text-sm text-ink-300 hover:text-white">Arquivo grande ou no computador? <span className="text-brand underline">Envie pelo link do Google Drive</span></button>
+            )}
           </div>
         )}
         {erro && <p className="mt-4 rounded-xl border border-bad/30 bg-bad/10 p-3 text-sm text-bad">{erro}</p>}
