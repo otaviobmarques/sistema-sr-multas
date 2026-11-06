@@ -118,16 +118,9 @@ export async function gerar(defesaId: string, usuarioId: string, ajuste?: string
   const multa = d.multas.find((m) => m.id === defesa.multa_id)!;
   if (defesa.status === "fora_do_escopo") throw new Error("Caso fora do escopo automatizado");
 
-  // Etapa 7: documentos obrigatórios antes de pesquisar/redigir (e antes de consumir crédito)
-  if (supabaseAtivo()) {
-    const faltam = await faltantes(d, defesa, multa);
-    defesa.documentos_pendentes = faltam.map((t) => DOCS[t].rotulo);
-    if (faltam.length) {
-      defesa.status = "aguardando_documentos";
-      await save();
-      return { precisaPagar: false as const, precisaDocumentos: true as const, faltam, defesa };
-    }
-  }
+  // Etapa 7: documentos obrigatórios são exigidos na ASSINATURA; aqui só registramos o que falta
+  // (o cliente pode gerar e conferir a peça antes de juntar CNH/CRLV/procuração).
+  if (supabaseAtivo()) defesa.documentos_pendentes = (await faltantes(d, defesa, multa)).map((t) => DOCS[t].rotulo);
   if (!defesa.credito_consumido) {
     if (saldo(usuarioId) < 1) {
       defesa.status = "aguardando_pagamento";

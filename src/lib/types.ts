@@ -145,6 +145,7 @@ export interface Defesa {
   versoes: DefesaVersao[];
   credito_consumido: boolean;
   documentos_pendentes: string[];
+  relato?: string | null; // "o que aconteceu", nas palavras do cliente (dado, não instrução)
   validacao?: {
     fatos_confirmados: string[];
     declaracoes: string[];

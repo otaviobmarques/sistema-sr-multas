@@ -2,12 +2,13 @@
 
 import { chamarApi } from "@/lib/rede";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import clsx from "clsx";
-import { CheckCircle2, Download, FileSignature, History, Loader2, Printer, Send, ShieldCheck, Sparkles, Stamp, Wand2, XCircle } from "lucide-react";
+import { CheckCircle2, Download, FileSignature, History, Loader2, Printer, Send, ShieldCheck, Sparkles, Stamp, Wand2, XCircle, RotateCcw, AlertTriangle } from "lucide-react";
 import { Badge, Card, CardTitle, StatusBadge, dataBR, FASES } from "@/components/ui";
 import { Peca } from "@/components/Peca";
 import { Documentos } from "@/components/Documentos";
+import { Relato } from "@/components/Relato";
 import { montarPeca } from "@/lib/peca-formato";
 import { Resultado } from "./Resultado";
 import type { Defesa, Multa } from "@/lib/types";
@@ -30,6 +31,9 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
   const [modalAssinar, setModalAssinar] = useState(false);
   const [protocolo, setProtocolo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [faltam, setFaltam] = useState<string[]>([]);
+  const [refazendo, setRefazendo] = useState(false);
+  const relatoAtual = useRef(defesa.relato ?? "");
   const assinada = !!defesa.assinada_em;
   const confirmadas = v.citacoes.filter((c) => c.status_trava === "confirmada");
 
@@ -40,6 +44,16 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
     setAjustando(false);
     if (r.erro) return setErro(r.erro);
     setAjuste("");
+    setDecl([]);
+    router.refresh();
+  }
+  async function refazer() {
+    if (!confirm("Gerar uma nova versão da defesa, sem custo? A versão atual fica guardada no histórico.")) return;
+    setErro(null);
+    setRefazendo(true);
+    const r = await chamarApi(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: JSON.stringify({ relato: relatoAtual.current }) }, 170_000);
+    setRefazendo(false);
+    if (r.erro) return setErro(r.erro);
     setDecl([]);
     router.refresh();
   }
@@ -72,7 +86,7 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
           <a href={`/api/defesas/${defesa.id}/docx`} className="btn btn-ghost"><Download className="size-4" /> {assinada ? "DOCX (peça + protocolo)" : "DOCX"}</a>
           <a href={`/imprimir/${defesa.id}`} target="_blank" className="btn btn-ghost"><Printer className="size-4" /> {assinada ? "PDF (peça + protocolo)" : "Prévia em PDF"}</a>
           {!assinada && (
-            <button onClick={() => setModalAssinar(true)} disabled={decl.length < DECL.length} className="btn btn-ok" title={decl.length < DECL.length ? "Confirme os fatos ao lado" : ""}>
+            <button onClick={() => setModalAssinar(true)} disabled={decl.length < DECL.length || faltam.length > 0} className="btn btn-ok" title={faltam.length ? "Envie os documentos pendentes" : decl.length < DECL.length ? "Confirme os fatos ao lado" : ""}>
               <FileSignature className="size-4" /> Confirmar e assinar
             </button>
           )}
@@ -103,6 +117,18 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
                 ))}
               </div>
               <p className="mt-3 text-[11px] text-ink-400">A peça sai em seu nome. Se algum fato estiver errado, peça um ajuste à IA abaixo antes de assinar.</p>
+            </Card>
+          ) : null}
+          {!assinada ? (
+            <Card className={faltam.length ? "!border-warn/30" : ""}>
+              <CardTitle extra={faltam.length ? <Badge tone="warn">exigidos para assinar</Badge> : <Badge tone="ok">completos</Badge>}>Documentos</CardTitle>
+              {faltam.length > 0 && (
+                <div className="-mt-1 mb-3 flex gap-2.5 rounded-xl border border-warn/30 bg-warn/5 p-3 text-xs text-ink-300">
+                  <AlertTriangle className="size-4 shrink-0 text-warn" />
+                  <span><b className="text-white">Documentos necessários para assinar e protocolar.</b> Sem eles, o órgão pode nem conhecer o recurso. Envie abaixo: a lista de anexos da peça se atualiza sozinha, sem gastar crédito.</span>
+                </div>
+              )}
+              <Documentos defesaId={defesa.id} terceiro={multa.remetente?.situacao === "terceiro"} onMudar={setFaltam} compacto />
             </Card>
           ) : defesa.status === "pronta_para_protocolar" ? (
             <Card className="!border-brand/30">
@@ -144,12 +170,23 @@ export function DefesaView({ defesa, multa, cliente }: { defesa: Defesa; multa: 
 
           {!assinada && (
             <Card>
+              <CardTitle>O que aconteceu</CardTitle>
+              <p className="-mt-2 mb-2 text-xs text-ink-400">Seu relato é usado na defesa. Se mudar algo, clique em <b>Refazer a defesa</b> abaixo para a IA considerar a nova versão.</p>
+              <Relato defesaId={defesa.id} inicial={defesa.relato ?? ""} onMudar={(t) => (relatoAtual.current = t)} compacto />
+            </Card>
+          )}
+          {!assinada && (
+            <Card>
               <CardTitle extra={<Wand2 className="size-4 text-ia" />}>Pedir ajuste à IA</CardTitle>
               <textarea className="input min-h-24 resize-y" placeholder="Ex.: o local correto é Av. Afonso Pena, 1550; eu não era o condutor…" value={ajuste} onChange={(e) => setAjuste(e.target.value)} />
               <button onClick={pedirAjuste} disabled={ajustando || !ajuste.trim()} className="btn btn-ghost mt-3 w-full">
                 {ajustando ? <><Loader2 className="size-4 animate-spin" /> Reescrevendo e reverificando…</> : <><Send className="size-4" /> Enviar ajuste</>}
               </button>
               <p className="mt-2 text-[11px] text-ink-400">Toda nova versão passa de novo pela trava automática.</p>
+              <button onClick={refazer} disabled={refazendo || ajustando} className="btn btn-ghost mt-3 w-full !text-xs">
+                {refazendo ? <><Loader2 className="size-4 animate-spin" /> Refazendo a defesa…</> : <><RotateCcw className="size-4" /> Refazer a defesa do zero (sem custo)</>}
+              </button>
+              <p className="mt-1.5 text-[11px] text-ink-400">Ajustes e novas versões desta multa não usam outro crédito.</p>
             </Card>
           )}
 

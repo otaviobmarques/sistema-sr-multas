@@ -3,6 +3,8 @@ import { audit, db, save } from "@/lib/db";
 import { naoAutorizado, usuarioAtual } from "@/lib/session";
 import { hashTexto, proximoProtocolo, textoCanonico } from "@/lib/protocolo";
 import { Emails } from "@/lib/email";
+import { DOCS, faltantes } from "@/lib/documentos";
+import { supabaseAtivo } from "@/lib/db";
 
 const DECLARACOES = ["data_hora", "local", "condutor", "documentos"];
 
@@ -19,6 +21,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!nome || nome.trim().toLowerCase() !== u.nome.toLowerCase()) return NextResponse.json({ erro: "Digite seu nome completo exatamente como no cadastro para assinar" }, { status: 400 });
   const agora = new Date().toISOString();
   const multa = d.multas.find((m) => m.id === defesa.multa_id)!;
+  if (supabaseAtivo()) {
+    const faltam = await faltantes(d, defesa, multa);
+    if (faltam.length) return NextResponse.json({ erro: `Antes de assinar, envie: ${faltam.map((t) => DOCS[t].rotulo).join(", ")}.`, faltam }, { status: 400 });
+  }
   defesa.validacao = { fatos_confirmados: declaracoes, declaracoes, ip: (req.headers.get("x-forwarded-for") ?? "local").split(",")[0].trim(), data: agora };
   defesa.hash_peca = hashTexto(textoCanonico(defesa, multa, u));
   defesa.protocolo_sm = proximoProtocolo();

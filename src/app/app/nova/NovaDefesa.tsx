@@ -9,6 +9,8 @@ import { LIMITE_ENVIO, prepararArquivo } from "@/lib/foto";
 import { chamarApi } from "@/lib/rede";
 import { SenhorCoruja, SenhorPlaca } from "@/components/Marca";
 import { Documentos } from "@/components/Documentos";
+import { Relato } from "@/components/Relato";
+import { createPortal } from "react-dom";
 import { Badge, Bar, Card, CardTitle, RESULTADO, StatusBadge, brl } from "@/components/ui";
 import type { Defesa, Multa } from "@/lib/types";
 
@@ -73,6 +75,8 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
   const [etapa, setEtapa] = useState(0);
   const [semCredito, setSemCredito] = useState(false);
   const [faltamDocs, setFaltamDocs] = useState<string[] | null>(null);
+  const [confirmar, setConfirmar] = useState(false);
+  const relatoAtual = useRef(defesa?.relato ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [refazer, setRefazer] = useState<{ problema: string; orientacao: string } | null>(null);
@@ -170,7 +174,7 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
     if (sujo) await salvar();
     setGerando(true);
     setEtapa(0);
-    const r = await chamarApi<{ precisaDocumentos?: boolean; faltam?: string[]; precisaPagar?: boolean }>(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: "{}" }, 170_000);
+    const r = await chamarApi<{ precisaDocumentos?: boolean; faltam?: string[]; precisaPagar?: boolean }>(`/api/defesas/${defesa.id}/gerar`, { method: "POST", body: JSON.stringify({ relato: relatoAtual.current }) }, 170_000);
     if (r.precisaDocumentos) {
       setGerando(false);
       setFaltamDocs(r.faltam ?? []);
@@ -391,8 +395,18 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
         ) : (
           <div className="space-y-6">
           <Card>
-            <CardTitle extra={faltamDocs && faltamDocs.length === 0 ? <Badge tone="ok">completos</Badge> : <Badge tone="warn">obrigatórios</Badge>}>Documentos</CardTitle>
+            <CardTitle extra={faltamDocs && faltamDocs.length === 0 ? <Badge tone="ok">completos</Badge> : <Badge tone="warn">exigidos para assinar</Badge>}>Documentos</CardTitle>
+            {faltamDocs && faltamDocs.length > 0 && (
+              <div className="-mt-1 mb-3 flex gap-2.5 rounded-xl border border-warn/30 bg-warn/5 p-3 text-xs text-ink-300">
+                <AlertTriangle className="size-4 shrink-0 text-warn" />
+                <span><b className="text-white">Os documentos são realmente necessários.</b> Sem CNH, CRLV{multa.remetente?.situacao === "terceiro" ? " e a procuração do proprietário" : ""}, a defesa não pode ser assinada nem protocolada, e o órgão pode nem conhecer o recurso. Com eles, a defesa fica mais sólida. Você pode gerar e conferir a peça antes, mas envie-os assim que puder.</span>
+              </div>
+            )}
             <Documentos defesaId={defesa.id} terceiro={multa.remetente?.situacao === "terceiro"} onMudar={(f) => setFaltamDocs(f)} />
+          </Card>
+          <Card>
+            <CardTitle>Conte o que aconteceu <span className="ml-1 normal-case tracking-normal text-ink-400">(opcional)</span></CardTitle>
+            <Relato defesaId={defesa.id} inicial={defesa.relato ?? ""} onMudar={(t) => (relatoAtual.current = t)} />
           </Card>
           <div className="panel p-5">
             {gerando ? (
@@ -416,10 +430,38 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
                   <span className="text-xs text-ink-400">saldo: {saldo} crédito(s)</span>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <button onClick={gerar} disabled={!!faltamDocs?.length} title={faltamDocs?.length ? "Envie os documentos obrigatórios" : ""} className="btn btn-primary flex-1 !py-3">Gerar Defesa (1 crédito)</button>
+                  <button onClick={() => (defesa.credito_consumido ? gerar() : setConfirmar(true))} className="btn btn-primary flex-1 !py-3">Gerar Defesa (1 crédito)</button>
                   <a href="#comparar" className="btn btn-ghost !py-3">Comparar com pagar com desconto</a>
                 </div>
-                <p className="mt-3 text-[11px] text-ink-400">{faltamDocs?.length ? "Envie os documentos obrigatórios acima para liberar a geração. " : ""}O crédito só é consumido agora, ao confirmar a geração. Cobre todas as fases desta multa.</p>
+                <p className="mt-3 text-[11px] text-ink-400">O crédito só é consumido ao confirmar a geração. Cobre todas as fases desta multa.</p>
+                {confirmar && createPortal(
+                  <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setConfirmar(false)}>
+                    <div className="panel w-full max-w-md bg-ink-900 p-6" onClick={(e) => e.stopPropagation()}>
+                      <h3 className="text-lg font-semibold text-white">{saldo < 1 ? "Você precisa de 1 crédito para gerar a defesa" : "Gerar a defesa usando 1 crédito?"}</h3>
+                      <div className="mt-4 flex items-center justify-between rounded-xl border border-brand/30 bg-brand/5 px-4 py-3 text-sm">
+                        <span className="text-ink-300">Seu saldo</span>
+                        <span className="font-mono text-white">{saldo < 1 ? <b className="text-bad">0 crédito</b> : <>{saldo} → <b className="text-brand">{saldo - 1}</b> crédito(s)</>}</span>
+                      </div>
+                      <ul className="mt-4 space-y-1.5 text-sm text-ink-300">
+                        <li>• Você vê a <b className="text-white">peça completa</b> e baixa uma prévia em PDF ou Word.</li>
+                        <li>• Pode pedir <b className="text-white">ajustes à IA sem custo</b> extra.</li>
+                        <li>• O mesmo crédito cobre as <b className="text-white">fases seguintes</b> desta multa (JARI e CETRAN).</li>
+                      </ul>
+                      {!!faltamDocs?.length && (
+                        <div className="mt-4 flex gap-2.5 rounded-xl border border-warn/30 bg-warn/5 p-3 text-xs text-ink-300">
+                          <AlertTriangle className="size-4 shrink-0 text-warn" />
+                          <span><b className="text-white">Faltam documentos ({faltamDocs.length}).</b> Eles são necessários para assinar e protocolar e deixam a defesa mais sólida. Recomendamos enviá-los antes; se gerar agora, você poderá enviá-los depois, antes de assinar.</span>
+                        </div>
+                      )}
+                      <p className="mt-3 text-[11px] text-ink-400">Depois de gerada, o crédito não é devolvido, pois o serviço foi prestado.</p>
+                      <div className="mt-5 flex gap-2">
+                        <button onClick={() => setConfirmar(false)} className="btn btn-ghost flex-1">Agora não</button>
+                        <button onClick={() => { setConfirmar(false); gerar(); }} className="btn btn-primary flex-1">{saldo < 1 ? "Comprar créditos" : faltamDocs?.length ? "Gerar mesmo assim" : "Gerar defesa"}</button>
+                      </div>
+                    </div>
+                  </div>,
+                  document.body,
+                )}
               </>
             )}
             {erro && <p className="mt-3 text-sm text-bad">{erro}</p>}

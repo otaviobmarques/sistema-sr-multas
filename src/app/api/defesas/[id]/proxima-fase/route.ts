@@ -29,6 +29,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   nova.id = uid("def");
   nova.credito_consumido = true; // mesmo crédito da multa
   nova.fase_anterior_id = anterior.id;
+  nova.relato = anterior.relato ?? null;
   anterior.proxima_fase_id = nova.id;
   d.defesas.unshift(nova);
   audit(u.id, "proxima_fase_aberta", `defesa:${nova.id}`, `${anterior.fase} → ${fase} · sem novo crédito`);

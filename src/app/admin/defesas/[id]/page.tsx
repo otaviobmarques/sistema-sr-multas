@@ -91,6 +91,10 @@ export default async function DefesaAdmin({ params }: { params: Promise<{ id: st
             </div>
           </Card>
           <Card>
+            <CardTitle>Relato do cliente</CardTitle>
+            <p className="whitespace-pre-wrap text-sm text-ink-200">{defesa.relato || <span className="text-ink-400">Sem relato.</span>}</p>
+          </Card>
+          <Card>
             <CardTitle>Documentos enviados</CardTitle>
             {arquivos.length === 0 && <p className="text-sm text-ink-400">Nenhum documento enviado.</p>}
             <div className="divide-y divide-white/5 text-sm">

@@ -22,13 +22,15 @@ export function Documentos({ defesaId, terceiro, onMudar, compacto }: { defesaId
   const camRef = useRef<HTMLInputElement>(null);
   const arqRef = useRef<HTMLInputElement>(null);
 
+  const aviso = useRef(onMudar);
+  aviso.current = onMudar;
   const carregar = useCallback(async () => {
     const r = await fetch(`/api/defesas/${defesaId}/documentos`).then((r) => r.json()).catch(() => null);
     if (!r?.arquivos) return;
     setArqs(r.arquivos);
     setFaltam(r.faltam);
-    onMudar?.(r.faltam);
-  }, [defesaId, onMudar]);
+    aviso.current?.(r.faltam);
+  }, [defesaId]);
   useEffect(() => {
     carregar();
   }, [carregar]);
