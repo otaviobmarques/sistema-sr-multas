@@ -5,9 +5,10 @@ import { VERSAO_REGRAS } from "../rules";
 import { dataBR, horaBR } from "../peca-formato";
 import { uid } from "../db";
 import { buscarTrechos, citavel, obterTrechos, type TrechoBase } from "../leis/base";
+import { jurisprudenciaDoCaso } from "../leis/jurisprudencia";
 import type { ChecagemRegra, Citacao, ConteudoPeca, Defesa, DefesaVersao, Multa } from "../types";
 
-export const VERSAO_PROMPT = "redator-2026.11.1";
+export const VERSAO_PROMPT = "redator-2026.11.2";
 type Fonte = TrechoBase;
 
 const fmtData = (s?: string | null) => dataBR(s);
@@ -23,17 +24,20 @@ const FASE_TITULO: Record<string, string> = {
 // ------------------------------------------------------------------ Pesquisador
 /**
  * Seleciona as fontes da peça SOMENTE na base de leis cadastrada:
- * (1) os dispositivos ligados às regras que apontaram nulidade; (2) a tipificação da infração (busca na base).
- * No modo conservador: apenas texto de lei (sem decisões/jurisprudência).
+ * (1) os dispositivos ligados às regras que apontaram nulidade; (2) a tipificação da infração (busca na base);
+ * (3) precedentes reais (súmulas/teses vinculantes) ligados a essas regras — lista fechada em leis/jurisprudencia.ts.
+ * Modo conservador: sem decisões próprias/jurimetria. Súmulas e teses dos tribunais superiores ficam de fora
+ * apenas quando a leitura da notificação é incerta (confiança < 0,8), pois aí os fatos ainda não estão firmes.
  */
-export async function pesquisar(checklist: ChecagemRegra[], multa: Multa, conservador: boolean): Promise<Fonte[]> {
+export async function pesquisar(checklist: ChecagemRegra[], multa: Multa, conservador: boolean, semJurisprudencia = conservador): Promise<Fonte[]> {
   const relevantes = checklist.filter((c) => c.resultado === "possivel_nulidade" || c.resultado === "nao_informado");
   const ids = new Set(relevantes.flatMap((c) => c.normas_ids));
   ids.add("ctb-art281-par1-inc1");
-  const porRegra = await obterTrechos([...ids]);
+  const juris = semJurisprudencia ? [] : jurisprudenciaDoCaso({ regrasRelevantes: relevantes.map((c) => c.regra), fase: multa.fase, enquadramento: multa.enquadramento, descricao: multa.descricao });
+  const porRegra = await obterTrechos([...ids, ...juris]);
   const tipificacao = multa.enquadramento ? await buscarTrechos(multa.enquadramento, 2, ["ctb"]) : [];
   const todas = [...porRegra, ...tipificacao.filter((t) => !ids.has(t.id))];
-  return todas.filter((f) => citavel(f).ok && (!conservador || f.origem !== "decisao_propria"));
+  return todas.filter((f) => citavel(f).ok && (!conservador || f.origem !== "decisao_propria") && (!semJurisprudencia || f.origem !== "jurisprudencia"));
 }
 
 // ------------------------------------------------------------------ Redator
@@ -53,6 +57,7 @@ Você entrega:
 1) "secoes", nesta ordem:
    - "DOS FATOS": narrativa objetiva em 1 a 2 parágrafos (quem, quando, onde, qual autuação e o essencial do auto). Sem argumentar aqui.
    - Uma seção por argumento do checklist, com título no padrão "DA NULIDADE POR …" ou "DA AUSÊNCIA DE …" / "DA INCONSISTÊNCIA DO AUTO …". Em cada uma, 2 ou 3 parágrafos: (a) o fato concreto do caso; (b) a norma aplicável, citada; (c) a consequência jurídica (arquivamento/insubsistência) ligada ao caso.
+   - Se houver fontes com tipo "jurisprudencia" ligadas ao argumento, acrescente na mesma seção UM parágrafo próprio mostrando que o entendimento é pacífico nos tribunais superiores (ex.: "Nesse sentido, o Superior Tribunal de Justiça firmou que [[fonte:ID|…]]"), reproduzindo fielmente o sentido do enunciado/tese, e ligando-o ao caso. Jurisprudência reforça a norma; nunca a substitui. Não use jurisprudência em argumento ao qual ela não se refira.
    - Na fase JARI ou CETRAN, se houver, comece os argumentos reiterando de forma breve que a decisão anterior não enfrentou os vícios apontados.
    - Não numere os títulos (o sistema numera) e NÃO crie seção de pedidos.
 2) "pedidos": 2 a 4 pedidos curtos, específicos e em ordem lógica: o principal (acolhimento, arquivamento do auto e insubsistência do registro, com cancelamento da penalidade e dos pontos se houver); subsidiários (ex.: apresentação do certificado de verificação metrológica, das imagens do equipamento); e a intimação do requerente da decisão. Sem citar artigos nos pedidos.
@@ -60,6 +65,7 @@ Você entrega:
 
 Regras invioláveis:
 - Use SOMENTE as fontes fornecidas. Para citar, use exatamente [[fonte:ID|trecho do argumento]], onde ID é um dos IDs fornecidos, e o trecho parafraseia fielmente o dispositivo. Nunca crie lei, artigo, resolução, súmula ou decisão que não esteja na lista, nem cite número de artigo fora de uma marcação [[fonte:…]].
+- Jurisprudência: cite SOMENTE as fontes de tipo "jurisprudencia" fornecidas, pelo rótulo exato. É proibido mencionar qualquer outro precedente, acórdão, número de processo (REsp, RE, AgRg…), relator, ementa, tribunal estadual ou "jurisprudência pacífica/dominante" sem uma fonte [[fonte:…]] correspondente. Não acrescente dados (relator, data, número de processo) que não estejam no rótulo ou no texto da fonte.
 - Marque todo FATO que o cliente precisa confirmar (datas, horas, local, placa, equipamento, velocidades, condutor) como [[fato:texto]].
 - Não prometa resultado. Não use argumentos que não estejam no checklist. Não invente fatos.
 - Cada parágrafo deve fazer sentido sozinho (não comece com "Essa", "Tal", "Isso", "Ademais, tal…"): parágrafos com citação não confirmada podem ser removidos pela verificação.
@@ -78,10 +84,10 @@ async function redigirIA(m: Multa, checklist: ChecagemRegra[], fontes: Fonte[], 
         content: JSON.stringify({
           fase: FASE_TITULO[m.fase],
           orgao_esfera: m.esfera,
-          modo: conservador ? "CONSERVADOR: use apenas nulidades do motor de regras e texto de lei, sem jurisprudência" : "COMPLETO",
+          modo: conservador ? "CONSERVADOR: use apenas nulidades do motor de regras e as fontes fornecidas (lei e, se houver, jurisprudência fornecida); sem estatísticas ou decisões de órgãos" : "COMPLETO",
           multa: { placa: m.placa, auto: m.numero_auto, orgao: m.orgao, enquadramento: m.enquadramento, local: m.local, data_infracao: m.data_infracao, data_expedicao: m.data_expedicao, equipamento: m.agente_ou_equipamento, velocidade_medida: m.velocidade_medida, velocidade_limite: m.velocidade_limite },
           checklist: checklist.filter((c) => c.resultado !== "ok").map(({ regra, titulo, resultado, detalhe }) => ({ regra, titulo, resultado, detalhe })),
-          fontes: fontes.map((f) => ({ id: f.id, rotulo: f.rotulo, texto: f.texto, ...(f.contexto ? { dispositivo_pai: f.contexto } : {}) })),
+          fontes: fontes.map((f) => ({ id: f.id, tipo: f.origem === "jurisprudencia" ? "jurisprudencia" : "lei", rotulo: f.rotulo, texto: f.texto, ...(f.contexto ? { dispositivo_pai: f.contexto } : {}) })),
           ...(ajuste ? { pedido_de_ajuste_do_cliente: ajuste, versao_anterior: anterior } : {}),
         }),
       },
@@ -108,6 +114,8 @@ function redigirModelo(m: Multa, checklist: ChecagemRegra[], fontes: Fonte[], co
     const p: string[] = [];
     if (c.regra === "R01" && tem("ctb-art281-par1-inc2"))
       p.push(`A notificação da autuação foi expedida em [[fato:${fmtData(m.data_expedicao)}]], fora do prazo legal. Nos termos da lei, o auto de infração será arquivado e seu registro julgado insubsistente [[fonte:ctb-art281-par1-inc2|se, no prazo máximo de trinta dias, não for expedida a notificação da autuação]].`);
+    if (c.regra === "R01" && tem("juris-stj-tema-105"))
+      p.push(`Nesse sentido, o Superior Tribunal de Justiça, em julgamento de recurso repetitivo, firmou que, [[fonte:juris-stj-tema-105|não havendo a notificação do infrator para defesa no prazo de trinta dias, opera-se a decadência do direito de punir do Estado, não havendo que se falar em reinício do procedimento administrativo]].`);
     if (c.regra === "R02" && tem("ctb-art280-cpt"))
       p.push(`${c.detalhe} [[fonte:ctb-art280-cpt|O auto de infração deve conter os elementos exigidos em lei]], entre eles a tipificação, o local, a data e a hora, os caracteres do veículo e a identificação do órgão e do agente ou equipamento.`);
     if (c.regra === "R03") {
@@ -138,6 +146,8 @@ function redigirModelo(m: Multa, checklist: ChecagemRegra[], fontes: Fonte[], co
 
 // ------------------------------------------------------------------ Verificador (trava automática)
 const RE_FONTE = /\[\[fonte:([^|\]]+)\|([^\]]+)\]\]/g;
+/** Referências a precedentes (processos, súmulas, temas, "jurisprudência") que só podem aparecer dentro de [[fonte:…]]. */
+const RE_PRECEDENTE = /\b(?:REsp|AREsp|EREsp|AgRg|AgInt|EDcl|RE|ARE|ADI|ADPF|ADC|HC|MS|RMS|Ap\.?\s*C[ií]v|Apela[cç][aã]o\s+C[ií]vel)\s*(?:n[ºo°.]*\s*)?\d[\d.\/-]*|\bS[uú]mula(?:\s+Vinculante)?\s+(?:n[ºo°.]*\s*)?\d+|\bTema\s+(?:Repetitivo\s+)?(?:n[ºo°.]*\s*)?\d+|\bjurisprud[eê]ncia\s+(?:pac[ií]fica|dominante|consolidada|majorit[aá]ria)|\b(?:TJ|TRF)[- ]?[A-Z0-9]{1,2}\b/i;
 
 /**
  * Trava: cada citação precisa (1) ter vindo do pesquisador, (2) existir AGORA na base, com o MESMO hash
@@ -164,9 +174,24 @@ export async function verificar(peca: ConteudoPeca, aprovadas: Fonte[]): Promise
     const r = resultado.get(id)!;
     return { id: uid("cit"), fonte_id: id, rotulo: r.rotulo, status_trava: r.ok ? "confirmada" : "removida", motivo: r.motivo, verificada_em: agora };
   });
+  // Precedente mencionado fora de uma marcação [[fonte:…]] não passou pela base → parágrafo sai.
+  const soltos: string[] = [];
+  const semPrecedenteSolto = (p: string) => {
+    const livre = p.replace(RE_FONTE, " ").replace(/\[\[fato:[^\]]+\]\]/g, " ");
+    // permitido só se nomeia um precedente citado e confirmado no próprio parágrafo (mesmo tipo e número)
+    const rotulos = [...p.matchAll(RE_FONTE)].map((m) => resultado.get(m[1])).filter((r) => r?.ok).map((r) => r!.rotulo.toLowerCase());
+    const invalida = [...livre.matchAll(new RegExp(RE_PRECEDENTE.source, "gi"))].map((m) => m[0]).find((t) => {
+      const num = t.match(/\d[\d.]*/)?.[0].replace(/\./g, "");
+      const tipo = /s[uú]mula/i.test(t) ? "súmula" : /tema/i.test(t) ? "tema" : null;
+      return !(num && tipo && rotulos.some((r) => r.includes(tipo) && r.includes(`nº ${num}`)));
+    });
+    if (invalida) soltos.push(invalida);
+    return !invalida;
+  };
   const secoes = peca.secoes
-    .map((s) => ({ ...s, paragrafos: s.paragrafos.filter((p) => [...p.matchAll(RE_FONTE)].every((m) => resultado.get(m[1])?.ok)) }))
+    .map((s) => ({ ...s, paragrafos: s.paragrafos.filter((p) => [...p.matchAll(RE_FONTE)].every((m) => resultado.get(m[1])?.ok) && semPrecedenteSolto(p)) }))
     .filter((s) => s.paragrafos.length);
+  for (const t of soltos) citacoes.push({ id: uid("cit"), fonte_id: "precedente-sem-fonte", rotulo: `Menção sem fonte: "${t}"`, status_trava: "removida", motivo: "Precedente citado sem fonte da base (texto livre)", verificada_em: agora });
   return { peca: { ...peca, secoes }, citacoes };
 }
 
@@ -182,7 +207,7 @@ export async function gerarDefesa(
   const conservador = confMedia < 0.8 || defesa.estimativa.faixa === "indisponivel";
   // Com SM_EXIGIR_REGRAS_ASSINADAS=1, só regras assinadas pelo especialista viram argumento da peça.
   const checklist = opts.regrasValidas ? defesa.checklist.filter((c) => opts.regrasValidas!.has(c.regra)) : defesa.checklist;
-  const aprovadas = await pesquisar(checklist, multa, conservador);
+  const aprovadas = await pesquisar(checklist, multa, conservador, confMedia < 0.8);
 
   const anterior = defesa.versoes.at(-1)?.conteudo;
   const rascunho = iaAtiva()

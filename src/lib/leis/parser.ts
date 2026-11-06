@@ -18,7 +18,7 @@ export type NormaLei = {
   ementa: string | null;
   fonte_oficial_url: string | null;
   versao_texto: string | null;
-  origem: "ctresb/leis" | "curadoria";
+  origem: "ctresb/leis" | "curadoria" | "jurisprudencia";
   repo_path: string | null;
   repo_commit: string | null;
   git_sha: string | null;
@@ -32,7 +32,7 @@ export type TrechoLei = {
   norma_id: string;
   urn: string;
   rotulo: string;
-  nivel: "artigo" | "caput" | "paragrafo" | "inciso" | "alinea";
+  nivel: "artigo" | "caput" | "paragrafo" | "inciso" | "alinea" | "tese";
   artigo: string;
   texto: string;
   contexto: string | null;

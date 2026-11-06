@@ -93,7 +93,7 @@ export function Peca({ b, citacoes, plain }: { b: BlocosPeca; citacoes: Citacao[
 
       {b.fundamentos.length > 0 && (
         <section className="mt-6 break-inside-avoid-page border-t border-black/15 pt-3 text-[10.5px] text-black/70">
-          <h2 className="mb-1 font-bold">FUNDAMENTAÇÃO LEGAL CONFERIDA NO TEXTO VIGENTE</h2>
+          <h2 className="mb-1 font-bold">FUNDAMENTOS CONFERIDOS NA BASE (LEGISLAÇÃO VIGENTE E JURISPRUDÊNCIA)</h2>
           {b.fundamentos.map((f) => <div key={f}>{f}</div>)}
         </section>
       )}

@@ -74,7 +74,7 @@ export async function gerarDocx(b: BlocosPeca, citacoes: Citacao[], comprovante:
   filhos.push(par([run("DOCUMENTOS ANEXOS", { bold: true, size: 19 })], { align: AlignmentType.LEFT, before: 360, after: 80 }));
   b.anexos.forEach((a, i) => filhos.push(par([run(`${i + 1}. ${a}`, { size: 19 })], { align: AlignmentType.LEFT, after: 40, line: 280 })));
   if (b.fundamentos.length) {
-    filhos.push(par([run("FUNDAMENTAÇÃO LEGAL CONFERIDA NO TEXTO VIGENTE", { bold: true, size: 16, color: "555555" })], { align: AlignmentType.LEFT, before: 280, after: 60 }));
+    filhos.push(par([run("FUNDAMENTOS CONFERIDOS NA BASE (LEGISLAÇÃO VIGENTE E JURISPRUDÊNCIA)", { bold: true, size: 16, color: "555555" })], { align: AlignmentType.LEFT, before: 280, after: 60 }));
     b.fundamentos.forEach((f) => filhos.push(par([run(f, { size: 16, color: "555555" })], { align: AlignmentType.LEFT, after: 20, line: 260 })));
   }
 

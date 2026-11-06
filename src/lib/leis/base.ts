@@ -16,7 +16,7 @@ export type TrechoBase = {
   revogado: boolean;
   hash: string;
   fonte_oficial_url: string | null;
-  origem: string; // ctresb/leis | curadoria
+  origem: string; // ctresb/leis | curadoria | jurisprudencia
   repo_commit?: string | null;
   validada_em?: string | null;
   sincronizado_em?: string;
@@ -43,7 +43,7 @@ export type NormaResumo = {
 
 /** Uma fonte só pode ser citada se não estiver revogada e, se for de curadoria, se já foi validada pelo especialista. */
 export function citavel(t: Pick<TrechoBase, "revogado" | "origem" | "validada_em">): { ok: boolean; motivo?: string } {
-  if (t.revogado) return { ok: false, motivo: "Dispositivo revogado ou vetado no texto vigente" };
+  if (t.revogado) return { ok: false, motivo: t.origem === "jurisprudencia" ? "Precedente revogado, cancelado ou sem tese definitiva" : "Dispositivo revogado ou vetado no texto vigente" };
   if (t.origem === "curadoria" && !t.validada_em) return { ok: false, motivo: "Fonte de curadoria aguardando validação do especialista" };
   return { ok: true };
 }

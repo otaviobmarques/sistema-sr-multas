@@ -4,6 +4,7 @@
  * por alguma regra do motor mudar, registra alerta (a assinatura da regra deixa de valer).
  */
 import { lerNorma } from "./parser.ts";
+import { JURIS, lerPrecedente } from "./jurisprudencia.ts";
 import { listarNormas, trechosDaNorma } from "./base";
 import { audit, db, rpcServidor, save, uid } from "../db";
 import { REGRAS } from "../rules";
@@ -61,7 +62,18 @@ export async function sincronizarLeis(opts: { limite?: number } = {}) {
     }
     processadas++;
   }
-  const pendentes = mudaram.length - processadas;
+  // Jurisprudência (lista fechada): reimporta se o arquivo mudou; súmula revogada / tema cancelado passa a "revogado" e a trava bloqueia.
+  for (const j of JURIS) {
+    const rel = `jurisprudencia/${j.arquivo}`;
+    const info = await gh<{ sha: string; download_url: string }>(`contents/${rel}?ref=${commit}`).catch(() => null);
+    if (!info || atuais.get(rel)?.git_sha === info.sha) continue;
+    const md = await (await fetch(`https://raw.githubusercontent.com/${REPO}/${commit}/${rel}`, { cache: "no-store" })).text();
+    const p = lerPrecedente(md, j, { commit, gitSha: info.sha });
+    await rpcServidor("sm_normas_gravar", { p_normas: [p.norma], p_trechos: [p.trecho] });
+    if (atuais.has(rel)) alertas.push(`${p.trecho.rotulo}: ${p.vigente ? "texto atualizado" : `não citável (${p.motivo})`}`);
+    processadas++;
+  }
+  const pendentes = Math.max(0, mudaram.length - Math.min(mudaram.length, limite));
   if (!pendentes) audit("sistema", "sync_leis", "ctresb/leis", `${commit} · ${processadas} norma(s) atualizada(s)`);
   await save();
   return { commit, mudancas: processadas, pendentes, alertas };
