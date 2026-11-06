@@ -3,7 +3,12 @@
  * Entram com origem "curadoria" e NÃO podem ser citados até um especialista validar (tela Base de leis).
  *
  * Res. CONTRAN 798/2020 — no repositório só existe o Anexo II. Os dispositivos abaixo foram transcritos
- * da Res. CONTRAN 804/2020, art. 2º, que deu nova redação à 798. Conferir texto consolidado e vigência.
+ * da Res. CONTRAN 804/2020, art. 2º, que deu nova redação à 798.
+ *
+ * Pré-verificação (06/11/2026): nenhum ato revogador localizado (buscas na web e nas 237 normas CONTRAN
+ * da base — só a 804/2020 menciona a 798); texto consolidado em https://www.legisweb.com.br/legislacao/?id=401145
+ * lista apenas a 804 como alteradora e confere literalmente com os 4 trechos abaixo.
+ * DOU (in.gov.br) e gov.br não puderam ser acessados automaticamente (bloqueio/erro 502).
  */
 import { hashTexto, type NormaLei, type TrechoLei } from "./parser.ts";
 
@@ -22,7 +27,7 @@ export const NORMAS_CURADORIA: { norma: NormaLei; trechos: TrechoLei[] }[] = [
       data: "2020-09-02",
       ementa: "Dispõe sobre requisitos técnicos mínimos para a fiscalização da velocidade de veículos automotores, elétricos, reboques e semirreboques.",
       fonte_oficial_url: "https://www.in.gov.br/web/dou/-/resolucao-contran-n-798-de-2-de-setembro-de-2020-280802185",
-      versao_texto: "curadoria pendente de validação (trechos com redação da Res. 804/2020)",
+      versao_texto: "Pré-verificada em 06/11/2026: sem ato revogador localizado (buscas web + 237 normas CONTRAN da base); alterada apenas pela Res. 804/2020; os 4 trechos conferem literalmente com o texto consolidado do LegisWeb. Aguarda validação do especialista.",
       origem: "curadoria",
       repo_path: "reguladores/contran/resolucoes/2020/resolucao-contran-n-804-de-16-de-novembro-de-2020-*.md",
       repo_commit: null,
