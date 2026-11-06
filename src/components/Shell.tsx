@@ -109,7 +109,7 @@ export function Shell({ area, user, saldo, modoDemo, podeAdmin = false, real = f
               <BadgeCheck className="size-3.5" /> {area === "admin" ? "Ver como cliente" : "Ver como admin"}
             </button>
           )}
-          {(user.perfil === "admin" || !real) && (
+          {!real && (
             <button onClick={reset} title="Restaurar dados de demonstração" className="btn btn-ghost !px-2 !py-1.5">
               <RotateCcw className="size-3.5" />
             </button>

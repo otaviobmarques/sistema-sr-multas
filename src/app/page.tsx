@@ -76,7 +76,7 @@ export default function Home() {
               ))}
             </div>
             <div className="mt-4 rounded-xl border border-white/6 bg-white/[.02] p-3">
-              <div className="flex justify-between text-[11px] text-ink-400"><span>Estimativa de êxito</span><span className="text-warn">Moderada · 214 casos</span></div>
+              <div className="flex justify-between text-[11px] text-ink-400"><span>Estimativa de êxito</span><span className="text-warn">Moderada · exemplo ilustrativo</span></div>
               <div className="mt-2 h-1.5 rounded-full bg-white/6"><div className="h-full w-[61%] rounded-full bg-gradient-to-r from-amber-600 to-brand" /></div>
             </div>
           </div>
@@ -85,7 +85,8 @@ export default function Home() {
             <div className="mt-2 space-y-1.5 text-[11px]">
               <div className="flex justify-between"><span className="text-ink-300">CTB · art. 281</span><span className="text-ok">Confirmada</span></div>
               <div className="flex justify-between"><span className="text-ink-300">Res. CONTRAN</span><span className="text-ok">Confirmada</span></div>
-              <div className="flex justify-between"><span className="text-ink-300">Precedente sugerido</span><span className="text-bad">Removido</span></div>
+              <div className="flex justify-between"><span className="text-ink-300">STJ · Tema 105</span><span className="text-ok">Confirmada</span></div>
+              <div className="flex justify-between"><span className="text-ink-300">Precedente fora da base</span><span className="text-bad">Removido</span></div>
             </div>
           </div>
         </div>

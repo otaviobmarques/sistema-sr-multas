@@ -17,6 +17,7 @@ export default async function Jurimetria() {
           <table className="w-full min-w-[720px] text-sm">
             <thead><tr className="border-b border-white/6 text-left">{["Órgão", "Argumento", "Casos", "Êxito", "", "Estimativa"].map((h, i) => <th key={i} className="label px-5 py-3.5 font-medium">{h}</th>)}</tr></thead>
             <tbody className="divide-y divide-white/5">
+              {rows.length === 0 && <tr><td colSpan={6} className="px-5 py-6 text-center text-ink-400">Nenhum resultado registrado ainda. A base cresce quando os clientes informam o resultado do julgamento.</td></tr>}
               {rows.map((r) => {
                 const p = Math.round((r.exito / r.uso) * 100);
                 return (

@@ -22,7 +22,8 @@ function iso(dOffset: number, h = 10, m = 0) {
   return d.toISOString();
 }
 
-function seed(): DB {
+/** Dados de demonstração: SOMENTE no modo local (sem Supabase). */
+function seedDemo(): DB {
   const jurimetria = [
     { orgao: "DER-MG", argumento: "R01", uso: 182, exito: 142 },
     { orgao: "DER-MG", argumento: "R03", uso: 140, exito: 85 },
@@ -153,6 +154,13 @@ function seed(): DB {
   };
 }
 
+/** Produção: começa vazio, só com os planos à venda. */
+function seedProducao(): DB {
+  const d = seedDemo();
+  return { ...d, usuarios: [], veiculos: [], multas: [], defesas: [], pedidos: [], carteira: [], trava: [], jurimetria: [], resultados_orgao: [] };
+}
+const seed = () => (supabaseAtivo() ? seedProducao() : seedDemo());
+
 // ------------------------------------------------------------------ Armazenamento
 // Com NEXT_PUBLIC_SUPABASE_URL + SM_SERVER_SECRET: Supabase (tabela sm_registros, via funções protegidas).
 // Sem elas: arquivo local .data/db.json (desenvolvimento).
@@ -266,15 +274,10 @@ export async function save() {
   gs.__smloadedAt = Date.now();
 }
 
+/** Restaura os dados de demonstração — só no modo local. Em produção nunca apaga nada. */
 export async function resetDb() {
-  if (supabaseAtivo()) {
-    // preserva as contas reais; restaura os dados de demonstração
-    const reais = (g.__smdb?.usuarios ?? []).filter((u) => !["u_demo", "u_admin"].includes(u.id));
-    await rpc("sm_apagar_tudo", {});
-    g.__smdb = seed();
-    g.__smdb.usuarios.push(...reais);
-    gs.__smsnap = new Map();
-  } else g.__smdb = seed();
+  if (supabaseAtivo()) throw new Error("Indisponível em produção");
+  g.__smdb = seedDemo();
   await save();
 }
 
