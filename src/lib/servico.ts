@@ -2,11 +2,36 @@ import { audit, db, saldo, save, uid } from "./db";
 import { auditar, classificarEscopo, estimar } from "./rules";
 import { gerarDefesa } from "./ai/pipeline";
 import type { Extracao } from "./ai/extractor";
-import type { Defesa, Multa } from "./types";
+import type { Defesa, Multa, Usuario } from "./types";
+
+const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !["dos", "das", "de", "da", "do"].includes(w));
+
+/** Reconhece QUEM enviou a notificação: o titular (proprietário) ou um terceiro. */
+export function identificarRemetente(m: Pick<Multa, "placa" | "proprietario_nome" | "proprietario_documento">, u: Usuario): NonNullable<Multa["remetente"]> {
+  const docU = u.cpf_cnpj.replace(/\D/g, "");
+  const docN = (m.proprietario_documento ?? "").replace(/\D/g, "");
+  if (docN.length >= 11 && docU === docN) return { situacao: "titular", detalhe: "CPF/CNPJ da notificação confere com o seu cadastro." };
+  if (m.proprietario_nome) {
+    const a = norm(m.proprietario_nome), b = norm(u.nome);
+    const iguais = a.length && b.length && a[0] === b[0] && a.at(-1) === b.at(-1);
+    if (iguais) return { situacao: "titular", detalhe: `Notificação em nome de ${m.proprietario_nome} — confere com o seu cadastro.` };
+    return { situacao: "terceiro", detalhe: `A notificação está em nome de ${m.proprietario_nome}, não de ${u.nome}. A defesa deve sair em nome do titular: envie procuração/autorização do proprietário ou use a indicação de condutor, se era você dirigindo.` };
+  }
+  const veiculo = db().veiculos.find((v) => v.dono_id === u.id && v.placa === m.placa);
+  if (veiculo) return { situacao: "titular", detalhe: `Placa ${m.placa} cadastrada nos seus veículos.` };
+  return { situacao: "indefinido", detalhe: "Não foi possível identificar o proprietário na notificação. Confirme se o veículo é seu." };
+}
 
 export function multaDeExtracao(e: Extracao, dono_id: string, arquivo_nome: string, origem: Multa["origem"] = "upload"): Multa {
+  const m = multaBase(e, dono_id, arquivo_nome, origem);
+  const u = db().usuarios.find((x) => x.id === dono_id);
+  if (u) m.remetente = identificarRemetente(m, u);
+  return m;
+}
+
+function multaBase(e: Extracao, dono_id: string, arquivo_nome: string, origem: Multa["origem"]): Multa {
   const confianca: Record<string, number> = {};
-  for (const [k, v] of Object.entries(e)) if (v && typeof v === "object" && "confianca" in v) confianca[k] = v.confianca;
+  for (const [k, v] of Object.entries(e)) if (v && typeof v === "object" && "confianca" in v && !k.startsWith("proprietario")) confianca[k] = v.confianca;
   const veiculo = db().veiculos.find((v) => v.dono_id === dono_id && v.placa === e.placa.valor);
   return {
     id: uid("mul"),
@@ -33,6 +58,8 @@ export function multaDeExtracao(e: Extracao, dono_id: string, arquivo_nome: stri
     escopo: "automatizado",
     confianca,
     arquivo_nome,
+    proprietario_nome: e.proprietario_nome.valor,
+    proprietario_documento: e.proprietario_documento.valor,
     criado_em: new Date().toISOString(),
   };
 }
@@ -61,6 +88,7 @@ export function analisar(m: Multa, defesa?: Defesa): Defesa {
   base.fase = m.fase;
   base.checklist = checklist;
   base.estimativa = estimativa;
+  base.documentos_pendentes = m.remetente?.situacao === "terceiro" ? ["Procuração/autorização do proprietário"] : base.documentos_pendentes.filter((d) => !d.startsWith("Procuração"));
   if (escopo.escopo === "sinalizado") {
     base.status = "fora_do_escopo";
     d.trava.unshift({ id: uid("tr"), defesa_id: base.id, caso: `#${base.id.slice(-4)}`, acao: "fora_do_escopo", motivo: escopo.motivo ?? "Sinalizado", data: new Date().toISOString() });

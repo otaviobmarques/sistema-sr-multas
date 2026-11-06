@@ -4,13 +4,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
-import { AlertTriangle, CheckCircle2, FileUp, Loader2, Scale, ScanText, Search, ShieldCheck, Sparkles, PenLine, Info } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle2, FileUp, Loader2, Scale, ScanText, Search, ShieldCheck, Sparkles, PenLine, Info, UserCheck, UserX, RotateCcw } from "lucide-react";
+import { prepararArquivo } from "@/lib/foto";
 import { Badge, Bar, Card, CardTitle, RESULTADO, StatusBadge, brl } from "@/components/ui";
 import type { Defesa, Multa } from "@/lib/types";
 
 type G = { nivel: string; valor: number; pontos: number } | null;
 
 const CAMPOS: { k: keyof Multa; rotulo: string; tipo?: "text" | "date" | "datetime-local" | "number" | "select"; opcoes?: [string, string][]; full?: boolean }[] = [
+  { k: "proprietario_nome", rotulo: "Proprietário (na notificação)", full: true },
   { k: "placa", rotulo: "Placa" },
   { k: "numero_auto", rotulo: "Nº do auto" },
   { k: "orgao", rotulo: "Órgão autuador" },
@@ -55,6 +57,8 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
   const [etapa, setEtapa] = useState(0);
   const [semCredito, setSemCredito] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const [refazer, setRefazer] = useState<{ problema: string; orientacao: string } | null>(null);
 
   useEffect(() => {
     if (!gerando) return;
@@ -62,12 +66,19 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
     return () => clearInterval(t);
   }, [gerando]);
 
-  async function enviar(file: File) {
+  async function enviar(original: File) {
     setErro(null);
+    setRefazer(null);
     setEnviando(true);
+    const file = await prepararArquivo(original);
     const fd = new FormData();
     fd.append("arquivo", file);
     const r = await fetch("/api/multas", { method: "POST", body: fd }).then((r) => r.json());
+    if (r.orientacao) {
+      setRefazer({ problema: r.problema, orientacao: r.orientacao });
+      setEnviando(false);
+      return;
+    }
     if (r.erro) {
       setErro(r.erro);
       setEnviando(false);
@@ -128,10 +139,27 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
           </div>
           <h2 className="mt-6 text-lg font-semibold text-white">{enviando ? "Lendo sua notificação…" : "Arraste a notificação aqui"}</h2>
           <p className="mt-2 max-w-sm text-sm text-ink-400">
-            {enviando ? "Extraindo placa, auto, órgão, enquadramento, fase e prazo e rodando a auditoria." : "PDF, JPG, PNG ou foto do celular. A análise é gratuita — nenhum crédito é consumido agora."}
+            {enviando ? "Extraindo placa, auto, órgão, enquadramento, fase e prazo e rodando a auditoria." : "Tire uma foto da notificação com o celular ou envie o PDF. A IA reconhece a foto, confere a qualidade e identifica o titular. A análise é gratuita."}
           </p>
-          {!enviando && <span className="btn btn-primary mt-6">Selecionar arquivo</span>}
+          {!enviando && (
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={(e) => { e.preventDefault(); cameraRef.current?.click(); }} className="btn btn-primary"><Camera className="size-4" /> Tirar foto</button>
+              <span className="btn btn-ghost"><FileUp className="size-4" /> Selecionar arquivo</span>
+            </div>
+          )}
         </label>
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
+        {refazer && (
+          <div className="rise mt-4 flex gap-3 rounded-xl border border-warn/30 bg-warn/5 p-4">
+            <Camera className="size-5 shrink-0 text-warn" />
+            <div className="flex-1">
+              <div className="font-semibold text-white">Vamos tirar outra foto?</div>
+              <p className="mt-1 text-sm text-ink-300">{refazer.orientacao}</p>
+              <p className="mt-1 text-xs text-ink-400">Dica: notificação inteira no quadro, em superfície plana, com boa luz e sem flash. Nada foi cobrado.</p>
+            </div>
+            <button onClick={() => cameraRef.current?.click()} className="btn btn-ghost self-start"><RotateCcw className="size-4" /> Refazer</button>
+          </div>
+        )}
         {erro && <p className="mt-4 rounded-xl border border-bad/30 bg-bad/10 p-3 text-sm text-bad">{erro}</p>}
         <div className="mt-6 grid gap-3 text-xs text-ink-400 sm:grid-cols-3">
           {[["Dados tratados como dados", "Instruções escondidas no documento são ignoradas e registradas."], ["Criptografado", "Arquivo em armazenamento privado e criptografado."], ["Sem treino", "Contrato com o fornecedor de IA sem uso de dados para treinamento."]].map(([t, d]) => (
@@ -155,6 +183,15 @@ export function NovaDefesa({ defesa, multa, saldo, gravidade }: { defesa: Defesa
           <span className="flex items-center gap-2 text-ink-300"><ScanText className="size-4 text-ia" /> {multa.arquivo_nome ?? "notificação"} · enviado</span>
           <StatusBadge status={defesa.status} />
         </div>
+        {multa.remetente && (
+          <div className={clsx("mb-5 flex gap-3 rounded-xl border p-3.5 text-sm", multa.remetente.situacao === "titular" ? "border-ok/25 bg-ok/5" : multa.remetente.situacao === "terceiro" ? "border-warn/30 bg-warn/5" : "border-white/8 bg-white/[.02]")}>
+            {multa.remetente.situacao === "titular" ? <UserCheck className="size-5 shrink-0 text-ok" /> : <UserX className={clsx("size-5 shrink-0", multa.remetente.situacao === "terceiro" ? "text-warn" : "text-ink-400")} />}
+            <div>
+              <div className="font-medium text-white">{multa.remetente.situacao === "titular" ? "Você é o titular desta notificação" : multa.remetente.situacao === "terceiro" ? "Notificação em nome de outra pessoa" : "Titular não identificado"}</div>
+              <div className="mt-0.5 text-xs text-ink-400">{multa.remetente.detalhe}</div>
+            </div>
+          </div>
+        )}
         <CardTitle extra={<span className="text-[11px] text-ink-400">campos em <span className="text-warn">amarelo</span>: confiança baixa — confira</span>}>Dados extraídos (confira)</CardTitle>
         <div className="grid gap-3.5 sm:grid-cols-2">
           {CAMPOS.filter((c) => !(multa.tipo !== "velocidade" && ["velocidade_medida", "velocidade_limite", "equipamento_afericao"].includes(c.k))).map((c) => {

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
-import { Loader2, Paperclip, Send, UserRound, FileText } from "lucide-react";
+import { Camera, Loader2, Paperclip, Send, UserRound, FileText } from "lucide-react";
+import { prepararArquivo } from "@/lib/foto";
 import type { MensagemChat } from "@/lib/types";
 
 function Md({ t }: { t: string }) {
@@ -24,6 +25,7 @@ export default function Assistente() {
   const [enviando, setEnviando] = useState(false);
   const fim = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/chat").then((r) => r.json()).then((r) => setMsgs(r.mensagens));
@@ -32,8 +34,9 @@ export default function Assistente() {
     fim.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs, enviando]);
 
-  async function enviar(file?: File) {
-    if (!file && !texto.trim()) return;
+  async function enviar(original?: File) {
+    if (!original && !texto.trim()) return;
+    const file = original ? await prepararArquivo(original) : undefined;
     const fd = new FormData();
     fd.append("texto", texto);
     if (file) fd.append("arquivo", file);
@@ -89,6 +92,8 @@ export default function Assistente() {
 
       <form onSubmit={(e) => { e.preventDefault(); enviar(); }} className="panel flex items-center gap-2 rounded-t-none p-3">
         <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
+        <input ref={camRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
+        <button type="button" onClick={() => camRef.current?.click()} className="btn btn-ghost !p-2.5" aria-label="Tirar foto da notificação"><Camera className="size-4" /></button>
         <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-ghost !p-2.5" aria-label="Anexar notificação"><Paperclip className="size-4" /></button>
         <input className="input" placeholder="Digite sua dúvida…" value={texto} onChange={(e) => setTexto(e.target.value)} />
         <button disabled={enviando} className="btn btn-primary"><Send className="size-4" /> Enviar</button>

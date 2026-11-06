@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, save, audit } from "@/lib/db";
-import { analisar } from "@/lib/servico";
+import { analisar, identificarRemetente } from "@/lib/servico";
 import { usuarioAtual } from "@/lib/session";
 import type { Multa } from "@/lib/types";
 
@@ -21,6 +21,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       multa.confianca[k] = 1; // confirmado pelo cliente
     }
   }
+  const EDIT_PROP = ["proprietario_nome"] as const;
+  for (const k of EDIT_PROP) if (k in body) multa[k] = (body[k] as string) || null;
+  multa.remetente = identificarRemetente(multa, u);
   if (defesa.status === "fora_do_escopo") defesa.status = "em_analise";
   analisar(multa, defesa);
   audit(u.id, "campos_confirmados", `multa:${multa.id}`);

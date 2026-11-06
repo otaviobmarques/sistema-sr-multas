@@ -42,3 +42,12 @@ test("estimativa exige amostra mínima", () => {
   assert.equal(estimar(base, ck, [{ orgao: "DER-MG", argumento: "R01", uso: 10, exito: 9 }]).faixa, "indisponivel");
   assert.equal(estimar(base, ck, [{ orgao: "DER-MG", argumento: "R01", uso: 100, exito: 70 }]).faixa, "alta");
 });
+
+// Reconhecimento de quem enviou a notificação — a regra de comparação é pura (sem banco)
+test("identificação do titular por nome", () => {
+  const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().split(/\s+/);
+  const mesmo = (a: string, b: string) => norm(a)[0] === norm(b)[0] && norm(a).at(-1) === norm(b).at(-1);
+  assert.ok(mesmo("MARINA SOUZA", "Marina Souza"));
+  assert.ok(mesmo("MARINA DE OLIVEIRA SOUZA", "Marina Souza"));
+  assert.ok(!mesmo("JOÃO PEREIRA LIMA", "Marina Souza"));
+});

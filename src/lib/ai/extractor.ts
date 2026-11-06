@@ -25,7 +25,14 @@ export const ExtracaoSchema = z.object({
   velocidade_medida: Campo(z.number().nullable()),
   velocidade_limite: Campo(z.number().nullable()),
   equipamento_afericao: Campo(z.string().nullable()),
+  proprietario_nome: Campo(z.string().nullable()),
+  proprietario_documento: Campo(z.string().nullable()),
   legivel: z.boolean(),
+  qualidade_foto: z.object({
+    ok: z.boolean(),
+    problema: z.enum(["nenhum", "borrada", "cortada", "reflexo", "escura", "inclinada", "nao_e_notificacao"]),
+    orientacao: z.string(),
+  }),
   instrucoes_suspeitas: z.boolean(),
 });
 export type Extracao = z.infer<typeof ExtracaoSchema>;
@@ -37,7 +44,11 @@ Regras:
 - confianca de 0 a 1 por campo, honesta: 0.95+ só se o texto estiver nítido e inequívoco.
 - Datas em ISO 8601 (data_infracao com hora quando houver; prazo e datas sem hora em YYYY-MM-DD).
 - fase: "defesa_previa" para notificação de autuação; "jari" para notificação de penalidade; "cetran" para decisão da JARI.
-- velocidade_medida = velocidade considerada para autuação, em km/h.`;
+- velocidade_medida = velocidade CONSIDERADA para autuação (não a medida bruta), em km/h.
+- orgao: apenas a SIGLA do órgão autuador (ex.: "DER-MG", "PRF", "DETRAN-MG", "PBH/BHTrans").
+- enquadramento: o texto da infração como consta na notificação (ex.: "Transitar em velocidade superior à máxima permitida em até 20%"); descricao: resumo curto (ex.: "Excesso de velocidade").
+- proprietario_nome / proprietario_documento: nome e CPF/CNPJ do proprietário ou destinatário da notificação, se constarem.
+- A imagem pode ser uma FOTO tirada pelo celular: avalie qualidade_foto. ok=false se borrada, cortada (faltando campos), com reflexo, escura ou se não for uma notificação de trânsito; orientacao = instrução curta e amigável para refazer a foto (ou "Foto boa" se ok).`;
 
 export async function extrair(arquivo: { base64: string; mime: string; nome: string }): Promise<{ dados: Extracao; modo: "ia" | "demo" }> {
   if (!iaAtiva()) return { dados: exemploDemo(), modo: "demo" };
@@ -82,7 +93,10 @@ function exemploDemo(): Extracao {
     velocidade_medida: { valor: 71, confianca: 0.93 },
     velocidade_limite: { valor: 60, confianca: 0.93 },
     equipamento_afericao: { valor: null, confianca: 0 },
+    proprietario_nome: { valor: "Marina Souza", confianca: 0.9 },
+    proprietario_documento: { valor: null, confianca: 0 },
     legivel: true,
+    qualidade_foto: { ok: true, problema: "nenhum", orientacao: "Foto boa" },
     instrucoes_suspeitas: false,
   };
 }

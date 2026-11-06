@@ -33,6 +33,11 @@ export async function POST(req: Request) {
     if (file instanceof File && file.size) {
       add({ papel: "user", texto: texto || "Enviei a notificação.", anexo: file.name });
       const { dados } = await extrair({ base64: Buffer.from(await file.arrayBuffer()).toString("base64"), mime: file.type, nome: file.name });
+      if (!dados.qualidade_foto.ok) {
+        add({ papel: "assistant", texto: `Não consegui ler bem essa foto 📷 (${dados.qualidade_foto.problema.replace("_", " ")}). ${dados.qualidade_foto.orientacao}` });
+        save();
+        return NextResponse.json({ mensagens: d.chat.filter((m) => m.usuario_id === u.id) });
+      }
       const multa = multaDeExtracao(dados, u.id, file.name, "whatsapp");
       const defesa = registrarMulta(multa);
       const pontos = defesa.checklist.filter((c) => c.resultado === "possivel_nulidade" || c.resultado === "nao_informado").length;
@@ -41,7 +46,7 @@ export async function POST(req: Request) {
       const resposta =
         defesa.status === "fora_do_escopo"
           ? `Li sua notificação: **${multa.placa}** · ${multa.orgao} · ${multa.descricao}. Este caso (${multa.descricao.toLowerCase()}) precisa de análise especial e foi sinalizado — ele não consome crédito.`
-          : `Li sua notificação:\n**Placa:** ${multa.placa} · **Órgão:** ${multa.orgao}\n**Infração:** ${multa.descricao}\n**Fase:** ${FASES[multa.fase]} · **prazo:** ${dias} dias\n\nEncontrei **${pontos} ponto(s) de atenção** que podem sustentar uma defesa. Estimativa de êxito: **${est}**.`;
+          : `Li sua notificação:\n**Placa:** ${multa.placa} · **Órgão:** ${multa.orgao}\n**Infração:** ${multa.descricao}\n**Fase:** ${FASES[multa.fase]} · **prazo:** ${dias} dias\n\nEncontrei **${pontos} ponto(s) de atenção** que podem sustentar uma defesa. Estimativa de êxito: **${est}**.${multa.remetente?.situacao === "terceiro" ? `\n\n⚠️ ${multa.remetente.detalhe}` : multa.remetente?.situacao === "titular" ? `\n\n✅ ${multa.remetente.detalhe}` : ""}`;
       add({
         papel: "assistant",
         texto: resposta,

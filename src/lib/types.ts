@@ -73,6 +73,10 @@ export interface Multa {
   escopo: "automatizado" | "sinalizado";
   confianca: Record<string, number>; // confiança por campo da extração (0..1)
   arquivo_nome?: string | null;
+  proprietario_nome?: string | null;
+  proprietario_documento?: string | null;
+  /** Reconhecimento de quem enviou a foto/notificação em relação ao titular */
+  remetente?: { situacao: "titular" | "terceiro" | "indefinido"; detalhe: string } | null;
   criado_em: string;
 }
 

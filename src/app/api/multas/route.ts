@@ -19,6 +19,10 @@ export async function POST(req: Request) {
   try {
     const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
     const { dados, modo } = await extrair({ base64, mime: file.type, nome: file.name });
+    if (!dados.qualidade_foto.ok) {
+      // Foto ruim: nada é registrado e nenhum crédito é usado — o cliente refaz a foto.
+      return NextResponse.json({ erro: "Não consegui ler bem a notificação", problema: dados.qualidade_foto.problema, orientacao: dados.qualidade_foto.orientacao }, { status: 422 });
+    }
     const multa = multaDeExtracao(dados, u.id, file.name);
     if (dados.instrucoes_suspeitas) {
       db().trava.unshift({ id: uid("tr"), defesa_id: "-", caso: `#${multa.id.slice(-4)}`, acao: "anexo_sinalizado", motivo: "Texto oculto tratado como dado", data: new Date().toISOString() });
