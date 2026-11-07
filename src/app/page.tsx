@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AssinaturaDomma, AssinaturaRedbox } from "@/components/Creditos";
 import { ArrowRight, CheckCircle2, FileCheck2, Fingerprint, Gauge, Lock, Radar, ScanText, ShieldCheck, Sparkles, Store, Workflow } from "lucide-react";
 import { Logo, brl } from "@/components/ui";
 import { SenhorCoruja, SenhorPlaca, SenhorTerno } from "@/components/Marca";
@@ -200,6 +201,10 @@ export default function Home() {
           <Logo size={24} />
           <p className="max-w-xl">A defesa é gerada por IA, validada e assinada pelo próprio interessado. O Senhor Multas não garante resultado: a decisão é do órgão julgador.</p>
           <p className="flex gap-4"><Link href="/termos" className="hover:text-white">Termos de uso</Link><Link href="/privacidade" className="hover:text-white">Privacidade</Link><span>© {new Date().getFullYear()} Senhor Multas</span></p>
+        </div>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-8 gap-y-3 border-t border-white/5 px-5 py-5 sm:justify-between">
+          <AssinaturaRedbox />
+          <AssinaturaDomma prefixo="Sistema desenvolvido por" className="!text-xs [&_svg]:!h-5" />
         </div>
       </footer>
     </div>

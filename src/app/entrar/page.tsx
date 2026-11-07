@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AssinaturaDomma } from "@/components/Creditos";
 import { Logo } from "@/components/ui";
 import { SenhorPlaca } from "@/components/Marca";
 import { EntrarBotoes } from "../EntrarBotoes";
@@ -30,6 +31,7 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
             <div className="mt-7 flex flex-col gap-3"><EntrarBotoes /></div>
           </>
         )}
+        <AssinaturaDomma className="mt-7 justify-center" />
       </div>
     </div>
   );

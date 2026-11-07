@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { Logo } from "./ui";
+import { AssinaturaDomma } from "./Creditos";
 
 const NAV = {
   cliente: [
@@ -122,6 +123,7 @@ export function Shell({ area, user, saldo, modoDemo, podeAdmin = false, real = f
           </button>
         </div>
       </div>
+      <AssinaturaDomma className="mt-3 justify-center" />
     </aside>
   );
 
